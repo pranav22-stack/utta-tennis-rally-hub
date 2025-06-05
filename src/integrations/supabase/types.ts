@@ -9,7 +9,114 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      tbl_eventname: {
+        Row: {
+          created_at: string | null
+          event_name: string
+          id: string
+        }
+        Insert: {
+          created_at?: string | null
+          event_name: string
+          id?: string
+        }
+        Update: {
+          created_at?: string | null
+          event_name?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      tbl_partners: {
+        Row: {
+          created_at: string | null
+          event_name: string
+          id: string
+          partner_id: string | null
+          ranking: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          event_name: string
+          id?: string
+          partner_id?: string | null
+          ranking?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          event_name?: string
+          id?: string
+          partner_id?: string | null
+          ranking?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tbl_partners_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "tbl_players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tbl_partners_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "tbl_players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tbl_players: {
+        Row: {
+          city: string
+          created_at: string | null
+          date_of_birth: string
+          fee_paid: boolean
+          food_pref: string
+          id: string
+          name: string
+          shirt_size: string
+          short_size: string
+          stay_y_or_n: boolean
+          updated_at: string | null
+          whatsapp_number: string
+        }
+        Insert: {
+          city: string
+          created_at?: string | null
+          date_of_birth: string
+          fee_paid?: boolean
+          food_pref: string
+          id?: string
+          name: string
+          shirt_size: string
+          short_size: string
+          stay_y_or_n?: boolean
+          updated_at?: string | null
+          whatsapp_number: string
+        }
+        Update: {
+          city?: string
+          created_at?: string | null
+          date_of_birth?: string
+          fee_paid?: boolean
+          food_pref?: string
+          id?: string
+          name?: string
+          shirt_size?: string
+          short_size?: string
+          stay_y_or_n?: boolean
+          updated_at?: string | null
+          whatsapp_number?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
