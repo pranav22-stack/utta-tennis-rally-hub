@@ -53,7 +53,7 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
         partner:tbl_players!tbl_partners_partner_id_fkey(name)
       `)
       .eq('event_name', selectedEvent)
-      .order('ranking', { ascending: true, nullsLast: true });
+      .order('ranking', { ascending: true, nullsFirst: false });
 
     if (error) {
       console.error('Error fetching event pairs:', error);
