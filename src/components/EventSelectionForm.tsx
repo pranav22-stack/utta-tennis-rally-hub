@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -60,20 +59,42 @@ export const EventSelectionForm = ({ onSubmit, onBack, isSubmitting }: EventSele
   };
 
   const fetchAvailablePartners = async (eventName: string, setter: (partners: any[]) => void) => {
-    // Get players who have registered for this event and don't have a partner yet
-    const { data: partnersData, error } = await supabase
-      .from('tbl_partners')
-      .select(`
-        user_id,
-        tbl_players!inner(id, name)
-      `)
-      .eq('event_name', eventName)
-      .is('partner_id', null);
+    try {
+      // Get all players who have registered for this event
+      const { data: registeredPlayers, error: registeredError } = await supabase
+        .from('tbl_partners')
+        .select(`
+          user_id,
+          partner_id,
+          tbl_players!inner(id, name)
+        `)
+        .eq('event_name', eventName);
 
-    if (error) {
-      console.error('Error fetching partners:', error);
-    } else {
-      setter(partnersData || []);
+      if (registeredError) {
+        console.error('Error fetching registered players:', registeredError);
+        setter([]);
+        return;
+      }
+
+      // Get all player IDs who already have partners (either as user_id with partner_id or as partner_id)
+      const playersWithPartners = new Set();
+      registeredPlayers?.forEach(entry => {
+        if (entry.partner_id) {
+          playersWithPartners.add(entry.user_id);
+          playersWithPartners.add(entry.partner_id);
+        }
+      });
+
+      // Filter out players who already have partners
+      const availablePlayers = registeredPlayers?.filter(entry => 
+        !playersWithPartners.has(entry.user_id)
+      ) || [];
+
+      console.log('Available partners for', eventName, ':', availablePlayers);
+      setter(availablePlayers);
+    } catch (error) {
+      console.error('Error in fetchAvailablePartners:', error);
+      setter([]);
     }
   };
 
