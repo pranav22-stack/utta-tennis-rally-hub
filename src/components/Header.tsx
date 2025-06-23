@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Trophy, Users, Calendar, Settings } from "lucide-react";
+import { Menu, X, Trophy, Calendar, HelpCircle, Settings } from "lucide-react";
 
 interface HeaderProps {
   onNavigate: (section: string) => void;
@@ -13,17 +13,35 @@ export const Header = ({ onNavigate }: HeaderProps) => {
   const navigationItems = [
     { id: 'home', label: 'Home', icon: Trophy },
     { id: 'tournaments', label: 'Tournaments', icon: Calendar },
-    { id: 'players', label: 'Players', icon: Users },
+    { id: 'help', label: 'Help', icon: HelpCircle },
     { id: 'admin', label: 'Admin', icon: Settings },
   ];
 
+  const handleNavClick = (id: string) => {
+    if (id === 'home') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (id === 'tournaments') {
+      const tournamentsSection = document.getElementById('tournaments-section');
+      if (tournamentsSection) {
+        tournamentsSection.scrollIntoView({ behavior: 'smooth' });
+      }
+    } else if (id === 'help') {
+      const footerSection = document.getElementById('footer-section');
+      if (footerSection) {
+        footerSection.scrollIntoView({ behavior: 'smooth' });
+      }
+    } else {
+      onNavigate(id);
+    }
+  };
+
   return (
-    <header className="bg-gradient-to-r from-orange-600 via-red-500 to-pink-600 text-white shadow-lg sticky top-0 z-50">
+    <header className="bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 text-white shadow-lg sticky top-0 z-50">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <div className="flex items-center space-x-3">
-            <Trophy className="h-8 w-8 text-yellow-300" />
+            <Trophy className="h-8 w-8 text-amber-400" />
             <h1 className="text-xl font-bold">UTA Tennis</h1>
           </div>
 
@@ -34,7 +52,7 @@ export const Header = ({ onNavigate }: HeaderProps) => {
               return (
                 <button
                   key={item.id}
-                  onClick={() => onNavigate(item.id)}
+                  onClick={() => handleNavClick(item.id)}
                   className="flex items-center space-x-2 px-3 py-2 rounded-md hover:bg-white/20 transition-colors"
                 >
                   <Icon className="h-4 w-4" />
@@ -63,7 +81,7 @@ export const Header = ({ onNavigate }: HeaderProps) => {
                   <button
                     key={item.id}
                     onClick={() => {
-                      onNavigate(item.id);
+                      handleNavClick(item.id);
                       setIsMenuOpen(false);
                     }}
                     className="flex items-center space-x-2 px-3 py-2 rounded-md hover:bg-white/20 transition-colors text-left"

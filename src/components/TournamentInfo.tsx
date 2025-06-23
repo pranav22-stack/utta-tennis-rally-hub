@@ -8,11 +8,11 @@ export const TournamentInfo = () => {
   const [showKeyPoints, setShowKeyPoints] = useState(false);
 
   const categories = [
-    { name: "Men's Open Doubles", icon: "👨‍🤝‍👨", color: "bg-blue-500" },
-    { name: "Women's Open Doubles", icon: "👩‍🤝‍👩", color: "bg-pink-500" },
-    { name: "Mixed Doubles", icon: "👫", color: "bg-purple-500" },
-    { name: "Veterans Doubles", icon: "🏆", color: "bg-orange-500" },
-    { name: "Junior Doubles", icon: "🎾", color: "bg-green-500" },
+    { name: "Men's Open Doubles", icon: "👨‍🤝‍👨", color: "bg-slate-600" },
+    { name: "Women's Open Doubles", icon: "👩‍🤝‍👩", color: "bg-slate-700" },
+    { name: "Mixed Doubles", icon: "👫", color: "bg-slate-800" },
+    { name: "Veterans Doubles", icon: "🏆", color: "bg-amber-600" },
+    { name: "Junior Doubles", icon: "🎾", color: "bg-amber-700" },
   ];
 
   const keyPoints = [
@@ -41,39 +41,39 @@ export const TournamentInfo = () => {
   ];
 
   return (
-    <div className="py-12 bg-gradient-to-br from-gray-50 to-white">
+    <div id="tournaments-section" className="py-12 bg-gradient-to-br from-white to-slate-50">
       <div className="container mx-auto px-4">
         {/* Tournament Features */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          <Card className="bg-gradient-to-br from-orange-500 to-red-500 text-white border-0 shadow-lg hover:shadow-xl transition-shadow">
+          <Card className="bg-gradient-to-br from-slate-700 to-slate-800 text-white border-0 shadow-lg hover:shadow-xl transition-shadow">
             <CardHeader className="text-center">
-              <Trophy className="h-12 w-12 mx-auto mb-2 text-yellow-300" />
+              <Trophy className="h-12 w-12 mx-auto mb-2 text-amber-300" />
               <CardTitle className="text-white">5 Categories</CardTitle>
-              <CardDescription className="text-orange-100">Multiple tournament categories available</CardDescription>
+              <CardDescription className="text-slate-200">Multiple tournament categories available</CardDescription>
             </CardHeader>
           </Card>
           
-          <Card className="bg-gradient-to-br from-blue-500 to-purple-500 text-white border-0 shadow-lg hover:shadow-xl transition-shadow">
+          <Card className="bg-gradient-to-br from-slate-600 to-slate-700 text-white border-0 shadow-lg hover:shadow-xl transition-shadow">
             <CardHeader className="text-center">
-              <Users className="h-12 w-12 mx-auto mb-2 text-blue-200" />
+              <Users className="h-12 w-12 mx-auto mb-2 text-slate-200" />
               <CardTitle className="text-white">Doubles Format</CardTitle>
-              <CardDescription className="text-blue-100">Team up with partners for exciting matches</CardDescription>
+              <CardDescription className="text-slate-200">Team up with partners for exciting matches</CardDescription>
             </CardHeader>
           </Card>
           
-          <Card className="bg-gradient-to-br from-green-500 to-teal-500 text-white border-0 shadow-lg hover:shadow-xl transition-shadow">
+          <Card className="bg-gradient-to-br from-amber-600 to-amber-700 text-white border-0 shadow-lg hover:shadow-xl transition-shadow">
             <CardHeader className="text-center">
-              <Calendar className="h-12 w-12 mx-auto mb-2 text-green-200" />
+              <Calendar className="h-12 w-12 mx-auto mb-2 text-amber-200" />
               <CardTitle className="text-white">Annual Event</CardTitle>
-              <CardDescription className="text-green-100">Prestigious yearly tournament</CardDescription>
+              <CardDescription className="text-amber-100">Prestigious yearly tournament</CardDescription>
             </CardHeader>
           </Card>
           
-          <Card className="bg-gradient-to-br from-pink-500 to-rose-500 text-white border-0 shadow-lg hover:shadow-xl transition-shadow">
+          <Card className="bg-gradient-to-br from-amber-700 to-amber-800 text-white border-0 shadow-lg hover:shadow-xl transition-shadow">
             <CardHeader className="text-center">
-              <Award className="h-12 w-12 mx-auto mb-2 text-pink-200" />
+              <Award className="h-12 w-12 mx-auto mb-2 text-amber-200" />
               <CardTitle className="text-white">2 Categories Max</CardTitle>
-              <CardDescription className="text-pink-100">Each player can participate in up to 2 categories</CardDescription>
+              <CardDescription className="text-amber-100">Each player can participate in up to 2 categories</CardDescription>
             </CardHeader>
           </Card>
         </div>
@@ -81,7 +81,7 @@ export const TournamentInfo = () => {
         <div className="grid md:grid-cols-2 gap-8">
           {/* Available Categories */}
           <Card className="shadow-lg border-0 bg-white">
-            <CardHeader className="bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-t-lg">
+            <CardHeader className="bg-gradient-to-r from-slate-700 to-slate-800 text-white rounded-t-lg">
               <CardTitle className="text-2xl text-center flex items-center justify-center">
                 <Trophy className="mr-3" />
                 Available Categories
@@ -90,12 +90,12 @@ export const TournamentInfo = () => {
             <CardContent className="p-6">
               <div className="space-y-4">
                 {categories.map((category, index) => (
-                  <div key={index} className="flex items-center p-4 rounded-lg bg-gradient-to-r from-gray-50 to-gray-100 hover:from-orange-50 hover:to-red-50 transition-colors">
+                  <div key={index} className="flex items-center p-4 rounded-lg bg-gradient-to-r from-slate-50 to-slate-100 hover:from-slate-100 hover:to-slate-200 transition-colors">
                     <div className={`w-10 h-10 rounded-full ${category.color} flex items-center justify-center text-white font-bold mr-4`}>
                       {index + 1}
                     </div>
                     <div className="flex-1">
-                      <span className="text-lg font-semibold text-gray-800">{category.name}</span>
+                      <span className="text-lg font-semibold text-slate-800">{category.name}</span>
                       <span className="ml-3 text-2xl">{category.icon}</span>
                     </div>
                   </div>
@@ -106,7 +106,7 @@ export const TournamentInfo = () => {
 
           {/* Key Points Dropdown */}
           <Card className="shadow-lg border-0 bg-white">
-            <CardHeader className="bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-t-lg">
+            <CardHeader className="bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-t-lg">
               <CardTitle className="text-2xl text-center flex items-center justify-center">
                 <Award className="mr-3" />
                 Tournament Key Points
@@ -115,7 +115,7 @@ export const TournamentInfo = () => {
             <CardContent className="p-6">
               <Button
                 onClick={() => setShowKeyPoints(!showKeyPoints)}
-                className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white py-4 text-lg font-semibold"
+                className="w-full bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white py-4 text-lg font-semibold"
               >
                 {showKeyPoints ? (
                   <>
@@ -131,11 +131,11 @@ export const TournamentInfo = () => {
               {showKeyPoints && (
                 <div className="mt-6 space-y-3 max-h-80 overflow-y-auto">
                   {keyPoints.map((point, index) => (
-                    <div key={index} className="flex items-start p-3 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 hover:from-blue-100 hover:to-purple-100 transition-colors">
-                      <div className="w-6 h-6 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white text-sm font-bold mr-3 flex-shrink-0">
+                    <div key={index} className="flex items-start p-3 rounded-lg bg-gradient-to-r from-amber-50 to-amber-100 hover:from-amber-100 hover:to-amber-200 transition-colors">
+                      <div className="w-6 h-6 rounded-full bg-gradient-to-r from-amber-600 to-amber-700 flex items-center justify-center text-white text-sm font-bold mr-3 flex-shrink-0">
                         {index + 1}
                       </div>
-                      <span className="text-gray-700">{point}</span>
+                      <span className="text-slate-700">{point}</span>
                     </div>
                   ))}
                 </div>
