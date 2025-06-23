@@ -63,51 +63,53 @@ export const UserLogin = ({ onBack }: UserLoginProps) => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-white">
-      <div className="bg-green-600 text-white py-6">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50">
+      <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 text-white py-6">
         <div className="container mx-auto px-4">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" onClick={onBack} className="text-white hover:bg-green-700">
+            <Button variant="ghost" size="sm" onClick={onBack} className="text-white hover:bg-white/20">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Home
             </Button>
-            <h1 className="text-2xl font-bold">User Login</h1>
+            <h1 className="text-2xl font-bold">Player Login</h1>
           </div>
         </div>
       </div>
 
       <div className="container mx-auto px-4 py-8">
-        <Card className="max-w-md mx-auto">
-          <CardHeader>
-            <CardTitle className="text-center">Login to Your Account</CardTitle>
+        <Card className="max-w-md mx-auto shadow-xl border-0">
+          <CardHeader className="bg-gradient-to-r from-orange-500 to-pink-500 text-white rounded-t-lg">
+            <CardTitle className="text-center text-xl">Login to Your Account</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-6 bg-white/90 backdrop-blur-sm">
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
-                <Label htmlFor="whatsapp">WhatsApp Number</Label>
+                <Label htmlFor="whatsapp" className="text-gray-700">WhatsApp Number</Label>
                 <Input
                   id="whatsapp"
                   type="tel"
                   value={whatsappNumber}
                   onChange={(e) => setWhatsappNumber(e.target.value)}
                   required
+                  className="border-orange-200 focus:border-orange-500"
                 />
               </div>
 
               <div>
-                <Label htmlFor="dob">Date of Birth</Label>
+                <Label htmlFor="dob" className="text-gray-700">Date of Birth</Label>
                 <Input
                   id="dob"
                   type="date"
                   value={dateOfBirth}
                   onChange={(e) => setDateOfBirth(e.target.value)}
                   required
+                  className="border-orange-200 focus:border-orange-500"
                 />
               </div>
 
               <Button 
                 type="submit" 
-                className="w-full bg-green-600 hover:bg-green-700"
+                className="w-full bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600"
                 disabled={isLoading}
               >
                 {isLoading ? "Logging in..." : "Login"}

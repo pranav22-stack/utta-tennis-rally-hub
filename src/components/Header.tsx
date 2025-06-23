@@ -36,12 +36,12 @@ export const Header = ({ onNavigate }: HeaderProps) => {
   };
 
   return (
-    <header className="bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 text-white shadow-lg sticky top-0 z-50">
+    <header className="bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 text-white shadow-lg sticky top-0 z-50">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <div className="flex items-center space-x-3">
-            <Trophy className="h-8 w-8 text-amber-400" />
+            <Trophy className="h-8 w-8 text-yellow-300" />
             <h1 className="text-xl font-bold">UTA Tennis</h1>
           </div>
 

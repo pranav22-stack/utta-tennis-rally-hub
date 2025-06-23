@@ -42,11 +42,11 @@ export const AdminLogin = ({ onBack }: AdminLoginProps) => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-white">
-      <div className="bg-green-600 text-white py-6">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50">
+      <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 text-white py-6">
         <div className="container mx-auto px-4">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" onClick={onBack} className="text-white hover:bg-green-700">
+            <Button variant="ghost" size="sm" onClick={onBack} className="text-white hover:bg-white/20">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Home
             </Button>
@@ -56,41 +56,43 @@ export const AdminLogin = ({ onBack }: AdminLoginProps) => {
       </div>
 
       <div className="container mx-auto px-4 py-8">
-        <Card className="max-w-md mx-auto">
-          <CardHeader>
-            <CardTitle className="text-center">Admin Access</CardTitle>
+        <Card className="max-w-md mx-auto shadow-xl border-0">
+          <CardHeader className="bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-t-lg">
+            <CardTitle className="text-center text-xl">Admin Access</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-6 bg-white/90 backdrop-blur-sm">
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
-                <Label htmlFor="username">Username</Label>
+                <Label htmlFor="username" className="text-gray-700">Username</Label>
                 <Input
                   id="username"
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required
+                  className="border-purple-200 focus:border-purple-500"
                 />
               </div>
 
               <div>
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password" className="text-gray-700">Password</Label>
                 <Input
                   id="password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  className="border-purple-200 focus:border-purple-500"
                 />
               </div>
 
-              <Button type="submit" className="w-full bg-green-600 hover:bg-green-700">
+              <Button type="submit" className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600">
                 Login
               </Button>
             </form>
             
-            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
-              <p className="text-sm text-blue-800">
+            <div className="mt-4 p-3 bg-gradient-to-r from-blue-50 to-purple-50 border border-purple-200 rounded">
+              <p className="text-sm text-purple-800">
                 <strong>Demo Credentials:</strong><br />
                 Username: admin<br />
                 Password: admin123

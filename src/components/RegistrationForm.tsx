@@ -131,11 +131,11 @@ export const RegistrationForm = ({ onBack }: RegistrationFormProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-white">
-      <div className="bg-green-600 text-white py-6">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50">
+      <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 text-white py-6">
         <div className="container mx-auto px-4">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" onClick={onBack} className="text-white hover:bg-green-700">
+            <Button variant="ghost" size="sm" onClick={onBack} className="text-white hover:bg-white/20">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Home
             </Button>
@@ -145,13 +145,13 @@ export const RegistrationForm = ({ onBack }: RegistrationFormProps) => {
       </div>
 
       <div className="container mx-auto px-4 py-8">
-        <Card className="max-w-2xl mx-auto">
-          <CardHeader>
-            <CardTitle className="text-center">
+        <Card className="max-w-2xl mx-auto shadow-xl border-0">
+          <CardHeader className="bg-gradient-to-r from-pink-500 to-orange-500 text-white rounded-t-lg">
+            <CardTitle className="text-center text-xl">
               Step {step} of 2: {step === 1 ? "Personal Details" : "Event Selection"}
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-6 bg-white/90 backdrop-blur-sm">
             {step === 1 ? (
               <PersonalDetailsForm
                 initialData={playerData}
