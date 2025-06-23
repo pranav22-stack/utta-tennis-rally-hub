@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, LogOut } from "lucide-react";
+import { ArrowLeft, LogOut, Trash2, UserPlus, Database, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -18,11 +18,15 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
   const [selectedEvent, setSelectedEvent] = useState("");
   const [events, setEvents] = useState<any[]>([]);
   const [eventPairs, setEventPairs] = useState<any[]>([]);
+  const [allPlayers, setAllPlayers] = useState<any[]>([]);
   const [rankings, setRankings] = useState<{ [key: string]: string }>({});
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState<'rankings' | 'players'>('rankings');
   const { toast } = useToast();
 
   useEffect(() => {
     fetchEvents();
+    fetchAllPlayers();
   }, []);
 
   useEffect(() => {
@@ -44,6 +48,19 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
     }
   };
 
+  const fetchAllPlayers = async () => {
+    const { data, error } = await supabase
+      .from('tbl_players')
+      .select('*')
+      .order('name');
+
+    if (error) {
+      console.error('Error fetching players:', error);
+    } else {
+      setAllPlayers(data || []);
+    }
+  };
+
   const fetchEventPairs = async () => {
     const { data, error } = await supabase
       .from('tbl_partners')
@@ -59,7 +76,6 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
       console.error('Error fetching event pairs:', error);
     } else {
       setEventPairs(data || []);
-      // Initialize rankings state
       const initialRankings: { [key: string]: string } = {};
       data?.forEach(pair => {
         if (pair.ranking) {
@@ -71,6 +87,27 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
   };
 
   const handleRankingChange = (pairId: string, ranking: string) => {
+    const numRanking = parseInt(ranking);
+    const maxRanking = eventPairs.length;
+    
+    if (numRanking < 1) {
+      toast({
+        title: "Invalid Ranking",
+        description: "Ranking cannot be less than 1",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (numRanking > maxRanking) {
+      toast({
+        title: "Invalid Ranking",
+        description: `Ranking cannot exceed ${maxRanking} (total pairs in event)`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setRankings(prev => ({
       ...prev,
       [pairId]: ranking
@@ -98,7 +135,7 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
         description: "Rankings updated successfully",
       });
       
-      fetchEventPairs(); // Refresh the data
+      fetchEventPairs();
     } catch (error) {
       console.error('Error updating rankings:', error);
       toast({
@@ -109,19 +146,103 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
     }
   };
 
+  const handleDeletePlayer = async (playerId: string, playerName: string) => {
+    if (!confirm(`Are you sure you want to delete ${playerName}? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      // First delete from partners table
+      const { error: partnersError } = await supabase
+        .from('tbl_partners')
+        .delete()
+        .or(`user_id.eq.${playerId},partner_id.eq.${playerId}`);
+
+      if (partnersError) throw partnersError;
+
+      // Then delete from players table
+      const { error: playerError } = await supabase
+        .from('tbl_players')
+        .delete()
+        .eq('id', playerId);
+
+      if (playerError) throw playerError;
+
+      toast({
+        title: "Success",
+        description: `${playerName} has been deleted successfully`,
+      });
+
+      fetchAllPlayers();
+      if (selectedEvent) fetchEventPairs();
+    } catch (error) {
+      console.error('Error deleting player:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete player",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleClearDatabase = async () => {
+    if (!confirm("Are you sure you want to clear the entire database? This will delete all players and registrations. This action cannot be undone.")) {
+      return;
+    }
+
+    try {
+      // Delete all partners first
+      const { error: partnersError } = await supabase
+        .from('tbl_partners')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+
+      if (partnersError) throw partnersError;
+
+      // Then delete all players
+      const { error: playersError } = await supabase
+        .from('tbl_players')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+
+      if (playersError) throw playersError;
+
+      toast({
+        title: "Success",
+        description: "Database cleared successfully",
+      });
+
+      fetchAllPlayers();
+      setEventPairs([]);
+      setRankings({});
+    } catch (error) {
+      console.error('Error clearing database:', error);
+      toast({
+        title: "Error",
+        description: "Failed to clear database",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const filteredPlayers = allPlayers.filter(player =>
+    player.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    player.city.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-white">
-      <div className="bg-green-600 text-white py-6">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-red-50 to-pink-50">
+      <div className="bg-gradient-to-r from-orange-600 via-red-500 to-pink-600 text-white py-6 shadow-lg">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Button variant="ghost" size="sm" onClick={onBack} className="text-white hover:bg-green-700">
+              <Button variant="ghost" size="sm" onClick={onBack} className="text-white hover:bg-white/20">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Home
               </Button>
-              <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+              <h1 className="text-3xl font-bold">Admin Dashboard</h1>
             </div>
-            <Button variant="ghost" size="sm" onClick={onLogout} className="text-white hover:bg-green-700">
+            <Button variant="ghost" size="sm" onClick={onLogout} className="text-white hover:bg-white/20">
               <LogOut className="h-4 w-4 mr-2" />
               Logout
             </Button>
@@ -130,76 +251,181 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
       </div>
 
       <div className="container mx-auto px-4 py-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Tournament Rankings Management</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium mb-2">Select Event</label>
-              <Select value={selectedEvent} onValueChange={setSelectedEvent}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Choose an event to manage rankings" />
-                </SelectTrigger>
-                <SelectContent>
-                  {events.map((event) => (
-                    <SelectItem key={event.id} value={event.event_name}>
-                      {event.event_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+        {/* Tab Navigation */}
+        <div className="flex gap-4 mb-8">
+          <Button
+            onClick={() => setActiveTab('rankings')}
+            className={`px-6 py-3 ${activeTab === 'rankings' 
+              ? 'bg-gradient-to-r from-orange-600 to-red-600 text-white' 
+              : 'bg-white text-gray-600 hover:bg-gray-100'}`}
+          >
+            Tournament Rankings
+          </Button>
+          <Button
+            onClick={() => setActiveTab('players')}
+            className={`px-6 py-3 ${activeTab === 'players' 
+              ? 'bg-gradient-to-r from-orange-600 to-red-600 text-white' 
+              : 'bg-white text-gray-600 hover:bg-gray-100'}`}
+          >
+            Player Management
+          </Button>
+        </div>
 
-            {selectedEvent && (
+        {activeTab === 'rankings' && (
+          <Card className="shadow-lg border-0">
+            <CardHeader className="bg-gradient-to-r from-orange-500 to-red-500 text-white">
+              <CardTitle className="text-2xl">Tournament Rankings Management</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 space-y-6">
               <div>
-                <h3 className="text-lg font-semibold mb-4">Pairs for {selectedEvent}</h3>
-                
-                {eventPairs.length > 0 ? (
-                  <>
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>S.No</TableHead>
-                          <TableHead>Player 1</TableHead>
-                          <TableHead>Player 2</TableHead>
-                          <TableHead>Ranking</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {eventPairs.map((pair, index) => (
-                          <TableRow key={pair.id}>
-                            <TableCell>{index + 1}</TableCell>
-                            <TableCell>{pair.user?.name}</TableCell>
-                            <TableCell>{pair.partner?.name || "Partner not registered yet"}</TableCell>
-                            <TableCell>
-                              <Input
-                                type="number"
-                                value={rankings[pair.id] || ""}
-                                onChange={(e) => handleRankingChange(pair.id, e.target.value)}
-                                placeholder="Enter ranking"
-                                className="w-24"
-                              />
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                    
-                    <Button 
-                      onClick={handleSubmitRankings}
-                      className="mt-4 bg-green-600 hover:bg-green-700"
-                    >
-                      Submit Rankings
-                    </Button>
-                  </>
-                ) : (
-                  <p className="text-gray-500">No pairs registered for this event yet.</p>
-                )}
+                <label className="block text-sm font-medium mb-2">Select Event</label>
+                <Select value={selectedEvent} onValueChange={setSelectedEvent}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Choose an event to manage rankings" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {events.map((event) => (
+                      <SelectItem key={event.id} value={event.event_name}>
+                        {event.event_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            )}
-          </CardContent>
-        </Card>
+
+              {selectedEvent && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Pairs for {selectedEvent}</h3>
+                  
+                  {eventPairs.length > 0 ? (
+                    <>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>S.No</TableHead>
+                            <TableHead>Player 1</TableHead>
+                            <TableHead>Player 2</TableHead>
+                            <TableHead>Ranking (1-{eventPairs.length})</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {eventPairs.map((pair, index) => (
+                            <TableRow key={pair.id}>
+                              <TableCell>{index + 1}</TableCell>
+                              <TableCell className="font-medium">{pair.user?.name}</TableCell>
+                              <TableCell>{pair.partner?.name || "Partner not registered yet"}</TableCell>
+                              <TableCell>
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  max={eventPairs.length}
+                                  value={rankings[pair.id] || ""}
+                                  onChange={(e) => handleRankingChange(pair.id, e.target.value)}
+                                  placeholder="Enter ranking"
+                                  className="w-24"
+                                />
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                      
+                      <Button 
+                        onClick={handleSubmitRankings}
+                        className="mt-4 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700"
+                      >
+                        Submit Rankings
+                      </Button>
+                    </>
+                  ) : (
+                    <p className="text-gray-500 text-center py-8">No pairs registered for this event yet.</p>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {activeTab === 'players' && (
+          <Card className="shadow-lg border-0">
+            <CardHeader className="bg-gradient-to-r from-blue-500 to-purple-500 text-white">
+              <CardTitle className="text-2xl flex items-center">
+                <UserPlus className="mr-3" />
+                Player Management
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 space-y-6">
+              {/* Search and Actions */}
+              <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+                <div className="relative flex-1 max-w-md">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Search players by name or city..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Button
+                  onClick={handleClearDatabase}
+                  variant="destructive"
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  <Database className="h-4 w-4 mr-2" />
+                  Clear Database
+                </Button>
+              </div>
+
+              {/* Players Table */}
+              <div className="rounded-lg overflow-hidden border">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-gray-50">
+                      <TableHead>Name</TableHead>
+                      <TableHead>City</TableHead>
+                      <TableHead>WhatsApp</TableHead>
+                      <TableHead>Date of Birth</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredPlayers.map((player) => (
+                      <TableRow key={player.id} className="hover:bg-gray-50">
+                        <TableCell className="font-medium">{player.name}</TableCell>
+                        <TableCell>{player.city}</TableCell>
+                        <TableCell>{player.whatsapp_number}</TableCell>
+                        <TableCell>{new Date(player.date_of_birth).toLocaleDateString()}</TableCell>
+                        <TableCell>
+                          <Button
+                            onClick={() => handleDeletePlayer(player.id, player.name)}
+                            variant="destructive"
+                            size="sm"
+                            className="bg-red-500 hover:bg-red-600"
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Delete
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {filteredPlayers.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  <UserPlus className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                  <p>No players found matching your search.</p>
+                </div>
+              )}
+
+              <div className="text-sm text-gray-600 bg-gray-50 p-4 rounded-lg">
+                <p><strong>Total Players:</strong> {allPlayers.length}</p>
+                <p><strong>Filtered Results:</strong> {filteredPlayers.length}</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
