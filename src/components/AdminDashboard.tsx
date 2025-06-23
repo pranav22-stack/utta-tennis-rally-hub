@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -231,8 +230,8 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-red-50 to-pink-50">
-      <div className="bg-gradient-to-r from-orange-600 via-red-500 to-pink-600 text-white py-6 shadow-lg">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-cyan-50 to-sky-50">
+      <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 text-white py-6 shadow-lg">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -256,7 +255,7 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
           <Button
             onClick={() => setActiveTab('rankings')}
             className={`px-6 py-3 ${activeTab === 'rankings' 
-              ? 'bg-gradient-to-r from-orange-600 to-red-600 text-white' 
+              ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white' 
               : 'bg-white text-gray-600 hover:bg-gray-100'}`}
           >
             Tournament Rankings
@@ -264,7 +263,7 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
           <Button
             onClick={() => setActiveTab('players')}
             className={`px-6 py-3 ${activeTab === 'players' 
-              ? 'bg-gradient-to-r from-orange-600 to-red-600 text-white' 
+              ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white' 
               : 'bg-white text-gray-600 hover:bg-gray-100'}`}
           >
             Player Management
@@ -273,7 +272,7 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
 
         {activeTab === 'rankings' && (
           <Card className="shadow-lg border-0">
-            <CardHeader className="bg-gradient-to-r from-orange-500 to-red-500 text-white">
+            <CardHeader className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white">
               <CardTitle className="text-2xl">Tournament Rankings Management</CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
@@ -332,7 +331,7 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
                       
                       <Button 
                         onClick={handleSubmitRankings}
-                        className="mt-4 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700"
+                        className="mt-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
                       >
                         Submit Rankings
                       </Button>
@@ -348,7 +347,7 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
 
         {activeTab === 'players' && (
           <Card className="shadow-lg border-0">
-            <CardHeader className="bg-gradient-to-r from-blue-500 to-purple-500 text-white">
+            <CardHeader className="bg-gradient-to-r from-teal-500 to-cyan-500 text-white">
               <CardTitle className="text-2xl flex items-center">
                 <UserPlus className="mr-3" />
                 Player Management

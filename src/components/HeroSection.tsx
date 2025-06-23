@@ -29,11 +29,11 @@ export const HeroSection = ({ onRegisterClick }: HeroSectionProps) => {
             <Star className="h-8 w-8 text-yellow-500" />
           </div>
           
-          {/* Register Button After Phrase */}
+          {/* Bigger Register Button After Phrase */}
           <div className="mb-8">
             <Button 
               onClick={onRegisterClick}
-              className="px-8 py-4 text-lg bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 font-bold transform hover:scale-105"
+              className="px-16 py-8 text-2xl bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white shadow-2xl hover:shadow-3xl transition-all duration-300 font-bold transform hover:scale-110 rounded-2xl"
             >
               🎾 Register Now
             </Button>
