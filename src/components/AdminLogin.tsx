@@ -42,8 +42,8 @@ export const AdminLogin = ({ onBack }: AdminLoginProps) => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50">
-      <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 text-white py-6">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-cyan-50 to-sky-50">
+      <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 text-white py-6">
         <div className="container mx-auto px-4">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="sm" onClick={onBack} className="text-white hover:bg-white/20">
@@ -57,7 +57,7 @@ export const AdminLogin = ({ onBack }: AdminLoginProps) => {
 
       <div className="container mx-auto px-4 py-8">
         <Card className="max-w-md mx-auto shadow-xl border-0">
-          <CardHeader className="bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-t-lg">
+          <CardHeader className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-t-lg">
             <CardTitle className="text-center text-xl">Admin Access</CardTitle>
           </CardHeader>
           <CardContent className="p-6 bg-white/90 backdrop-blur-sm">
@@ -70,7 +70,7 @@ export const AdminLogin = ({ onBack }: AdminLoginProps) => {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required
-                  className="border-purple-200 focus:border-purple-500"
+                  className="border-emerald-200 focus:border-emerald-500"
                 />
               </div>
 
@@ -82,17 +82,17 @@ export const AdminLogin = ({ onBack }: AdminLoginProps) => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="border-purple-200 focus:border-purple-500"
+                  className="border-emerald-200 focus:border-emerald-500"
                 />
               </div>
 
-              <Button type="submit" className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600">
+              <Button type="submit" className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600">
                 Login
               </Button>
             </form>
             
-            <div className="mt-4 p-3 bg-gradient-to-r from-blue-50 to-purple-50 border border-purple-200 rounded">
-              <p className="text-sm text-purple-800">
+            <div className="mt-4 p-3 bg-gradient-to-r from-blue-50 to-emerald-50 border border-emerald-200 rounded">
+              <p className="text-sm text-emerald-800">
                 <strong>Demo Credentials:</strong><br />
                 Username: admin<br />
                 Password: admin123

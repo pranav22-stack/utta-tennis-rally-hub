@@ -117,8 +117,8 @@ export const UserDashboard = ({ user, onBack, onLogout }: UserDashboardProps) =>
 
   if (editMode === 'personal') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50">
-        <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 text-white py-6">
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-cyan-50 to-sky-50">
+        <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 text-white py-6">
           <div className="container mx-auto px-4">
             <div className="flex items-center gap-4">
               <Button variant="ghost" size="sm" onClick={() => setEditMode(null)} className="text-white hover:bg-white/20">
@@ -145,8 +145,8 @@ export const UserDashboard = ({ user, onBack, onLogout }: UserDashboardProps) =>
 
   if (editMode === 'events') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50">
-        <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 text-white py-6">
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-cyan-50 to-sky-50">
+        <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 text-white py-6">
           <div className="container mx-auto px-4">
             <div className="flex items-center gap-4">
               <Button variant="ghost" size="sm" onClick={() => setEditMode(null)} className="text-white hover:bg-white/20">
@@ -173,8 +173,8 @@ export const UserDashboard = ({ user, onBack, onLogout }: UserDashboardProps) =>
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50">
-      <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 text-white py-6">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-cyan-50 to-sky-50">
+      <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 text-white py-6">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -195,7 +195,7 @@ export const UserDashboard = ({ user, onBack, onLogout }: UserDashboardProps) =>
       <div className="container mx-auto px-4 py-8">
         <div className="grid md:grid-cols-2 gap-6">
           <Card className="shadow-xl border-0">
-            <CardHeader className="bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-t-lg">
+            <CardHeader className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-t-lg">
               <CardTitle>Personal Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 p-6 bg-white/90 backdrop-blur-sm">
@@ -210,7 +210,7 @@ export const UserDashboard = ({ user, onBack, onLogout }: UserDashboardProps) =>
               <p><strong>Fee Paid:</strong> {user.fee_paid ? 'Yes' : 'No'}</p>
               <Button 
                 onClick={() => setEditMode('personal')}
-                className="w-full mt-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                className="w-full mt-4 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
               >
                 Edit Personal Details
               </Button>
@@ -218,14 +218,14 @@ export const UserDashboard = ({ user, onBack, onLogout }: UserDashboardProps) =>
           </Card>
 
           <Card className="shadow-xl border-0">
-            <CardHeader className="bg-gradient-to-r from-orange-500 to-pink-500 text-white rounded-t-lg">
+            <CardHeader className="bg-gradient-to-r from-cyan-500 to-sky-500 text-white rounded-t-lg">
               <CardTitle>Event Registrations</CardTitle>
             </CardHeader>
             <CardContent className="p-6 bg-white/90 backdrop-blur-sm">
               {userEvents.length > 0 ? (
                 <div className="space-y-3">
                   {userEvents.map((event, index) => (
-                    <div key={event.id} className="border rounded p-3 bg-gradient-to-r from-orange-50 to-pink-50">
+                    <div key={event.id} className="border rounded p-3 bg-gradient-to-r from-cyan-50 to-sky-50">
                       <p><strong>Event:</strong> {event.event_name}</p>
                       <p><strong>Partner:</strong> {event.partner?.name || 'Partner not registered yet'}</p>
                       {event.ranking && <p><strong>Ranking:</strong> {event.ranking}</p>}
@@ -237,7 +237,7 @@ export const UserDashboard = ({ user, onBack, onLogout }: UserDashboardProps) =>
               )}
               <Button 
                 onClick={() => setEditMode('events')}
-                className="w-full mt-4 bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600"
+                className="w-full mt-4 bg-gradient-to-r from-cyan-500 to-sky-500 hover:from-cyan-600 hover:to-sky-600"
               >
                 Edit Event Selections
               </Button>

@@ -36,7 +36,7 @@ export const Header = ({ onNavigate }: HeaderProps) => {
   };
 
   return (
-    <header className="bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 text-white shadow-lg sticky top-0 z-50">
+    <header className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 text-white shadow-lg sticky top-0 z-50">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
