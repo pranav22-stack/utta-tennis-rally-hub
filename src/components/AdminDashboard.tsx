@@ -36,66 +36,235 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
   }, [selectedEvent]);
 
   const fetchEvents = async () => {
-    const { data, error } = await supabase
-      .from('tbl_eventname')
-      .select('*')
-      .order('event_name');
+    try {
+      console.log('Fetching events...');
+      const { data, error } = await supabase
+        .from('tbl_eventname')
+        .select('*')
+        .order('event_name');
 
-    if (error) {
-      console.error('Error fetching events:', error);
-    } else {
-      setEvents(data || []);
+      if (error) {
+        console.error('Error fetching events:', error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch events",
+          variant: "destructive",
+        });
+      } else {
+        console.log('Events fetched successfully:', data);
+        setEvents(data || []);
+      }
+    } catch (error) {
+      console.error('Unexpected error fetching events:', error);
+      toast({
+        title: "Error",
+        description: "Unexpected error occurred while fetching events",
+        variant: "destructive",
+      });
     }
   };
 
   const fetchAllPlayers = async () => {
-    const { data, error } = await supabase
-      .from('tbl_players')
-      .select('*')
-      .order('name');
+    try {
+      console.log('Fetching all players...');
+      const { data, error } = await supabase
+        .from('tbl_players')
+        .select('*')
+        .order('name');
 
-    if (error) {
-      console.error('Error fetching players:', error);
-    } else {
-      setAllPlayers(data || []);
+      if (error) {
+        console.error('Error fetching players:', error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch players",
+          variant: "destructive",
+        });
+      } else {
+        console.log('Players fetched successfully:', data?.length, 'players found');
+        setAllPlayers(data || []);
+      }
+    } catch (error) {
+      console.error('Unexpected error fetching players:', error);
+      toast({
+        title: "Error",
+        description: "Unexpected error occurred while fetching players",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeletePlayer = async (playerId: string, playerName: string) => {
+    if (!confirm(`Are you sure you want to delete ${playerName}? This action cannot be undone.`)) {
+      return;
+    }
+
+    setIsDeleting(playerId);
+
+    try {
+      console.log('Starting delete process for player:', playerId, playerName);
+      
+      // First, delete all partner entries for this player
+      console.log('Deleting partner entries...');
+      const { error: partnersError } = await supabase
+        .from('tbl_partners')
+        .delete()
+        .or(`user_id.eq.${playerId},partner_id.eq.${playerId}`);
+
+      if (partnersError) {
+        console.error('Error deleting partner entries:', partnersError);
+        throw new Error(`Failed to delete partner entries: ${partnersError.message}`);
+      }
+      console.log('Partner entries deleted successfully');
+
+      // Then delete the player
+      console.log('Deleting player from tbl_players...');
+      const { error: playerError } = await supabase
+        .from('tbl_players')
+        .delete()
+        .eq('id', playerId);
+
+      if (playerError) {
+        console.error('Error deleting player:', playerError);
+        throw new Error(`Failed to delete player: ${playerError.message}`);
+      }
+      console.log('Player deleted successfully from database');
+
+      toast({
+        title: "Success",
+        description: `${playerName} has been deleted successfully`,
+      });
+
+      // Refresh the data immediately
+      console.log('Refreshing player list...');
+      await fetchAllPlayers();
+      
+      if (selectedEvent) {
+        console.log('Refreshing event pairs...');
+        await fetchEventPairs();
+      }
+      
+      console.log('Data refresh completed');
+    } catch (error) {
+      console.error('Error in delete operation:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : `Failed to delete ${playerName}. Please try again.`,
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(null);
+    }
+  };
+
+  const handleClearDatabase = async () => {
+    if (!confirm("Are you sure you want to clear the entire database? This will delete all players and registrations. This action cannot be undone.")) {
+      return;
+    }
+
+    if (!confirm("This will permanently delete ALL data. Are you absolutely sure?")) {
+      return;
+    }
+
+    try {
+      console.log('Starting database clear process');
+      
+      // Delete all partners first (to avoid foreign key constraints)
+      console.log('Clearing all partner entries...');
+      const { error: partnersError } = await supabase
+        .from('tbl_partners')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all rows
+
+      if (partnersError) {
+        console.error('Error clearing partners:', partnersError);
+        throw new Error(`Failed to clear partner entries: ${partnersError.message}`);
+      }
+      console.log('All partner entries cleared');
+
+      // Then delete all players
+      console.log('Clearing all player entries...');
+      const { error: playersError } = await supabase
+        .from('tbl_players')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all rows
+
+      if (playersError) {
+        console.error('Error clearing players:', playersError);
+        throw new Error(`Failed to clear player entries: ${playersError.message}`);
+      }
+      console.log('All player entries cleared');
+
+      toast({
+        title: "Success",
+        description: "Database cleared successfully",
+      });
+
+      // Refresh all data
+      await fetchAllPlayers();
+      setEventPairs([]);
+      setRankings({});
+      console.log('Database clear operation completed successfully');
+    } catch (error) {
+      console.error('Error clearing database:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to clear database. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
   const fetchEventPairs = async () => {
-    const { data, error } = await supabase
-      .from('tbl_partners')
-      .select(`
-        *,
-        user:tbl_players!tbl_partners_user_id_fkey(name),
-        partner:tbl_players!tbl_partners_partner_id_fkey(name)
-      `)
-      .eq('event_name', selectedEvent)
-      .order('ranking', { ascending: true, nullsFirst: false });
+    try {
+      console.log('Fetching event pairs for:', selectedEvent);
+      const { data, error } = await supabase
+        .from('tbl_partners')
+        .select(`
+          *,
+          user:tbl_players!tbl_partners_user_id_fkey(name),
+          partner:tbl_players!tbl_partners_partner_id_fkey(name)
+        `)
+        .eq('event_name', selectedEvent)
+        .order('ranking', { ascending: true, nullsFirst: false });
 
-    if (error) {
-      console.error('Error fetching event pairs:', error);
-    } else {
-      // Filter out duplicate teams - only show each team once
-      const uniqueTeams = new Map();
-      const filteredData = data?.filter(pair => {
-        if (!pair.partner_id) return true; // Show incomplete pairs
-        
-        const teamKey = [pair.user_id, pair.partner_id].sort().join('-');
-        if (uniqueTeams.has(teamKey)) {
-          return false; // Skip duplicate team
-        }
-        uniqueTeams.set(teamKey, true);
-        return true;
-      }) || [];
+      if (error) {
+        console.error('Error fetching event pairs:', error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch event pairs",
+          variant: "destructive",
+        });
+      } else {
+        // Filter out duplicate teams - only show each team once
+        const uniqueTeams = new Map();
+        const filteredData = data?.filter(pair => {
+          if (!pair.partner_id) return true; // Show incomplete pairs
+          
+          const teamKey = [pair.user_id, pair.partner_id].sort().join('-');
+          if (uniqueTeams.has(teamKey)) {
+            return false; // Skip duplicate team
+          }
+          uniqueTeams.set(teamKey, true);
+          return true;
+        }) || [];
 
-      setEventPairs(filteredData);
-      const initialRankings: { [key: string]: string } = {};
-      filteredData?.forEach(pair => {
-        if (pair.ranking) {
-          initialRankings[pair.id] = pair.ranking.toString();
-        }
+        console.log('Event pairs filtered:', filteredData.length, 'unique teams');
+        setEventPairs(filteredData);
+        const initialRankings: { [key: string]: string } = {};
+        filteredData?.forEach(pair => {
+          if (pair.ranking) {
+            initialRankings[pair.id] = pair.ranking.toString();
+          }
+        });
+        setRankings(initialRankings);
+      }
+    } catch (error) {
+      console.error('Unexpected error fetching event pairs:', error);
+      toast({
+        title: "Error",
+        description: "Unexpected error occurred while fetching event pairs",
+        variant: "destructive",
       });
-      setRankings(initialRankings);
     }
   };
 
@@ -129,6 +298,7 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
 
   const handleSubmitRankings = async () => {
     try {
+      console.log('Submitting rankings:', rankings);
       const updates = Object.entries(rankings).map(([pairId, ranking]) => ({
         id: pairId,
         ranking: ranking ? parseInt(ranking) : null
@@ -140,7 +310,10 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
           .update({ ranking: update.ranking })
           .eq('id', update.id);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error updating ranking for:', update.id, error);
+          throw error;
+        }
       }
 
       toast({
@@ -154,117 +327,6 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
       toast({
         title: "Error",
         description: "Failed to update rankings",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleDeletePlayer = async (playerId: string, playerName: string) => {
-    if (!confirm(`Are you sure you want to delete ${playerName}? This action cannot be undone.`)) {
-      return;
-    }
-
-    setIsDeleting(playerId);
-
-    try {
-      console.log('Starting delete process for player:', playerId);
-      
-      // First delete from partners table
-      const { error: partnersError } = await supabase
-        .from('tbl_partners')
-        .delete()
-        .or(`user_id.eq.${playerId},partner_id.eq.${playerId}`);
-
-      if (partnersError) {
-        console.error('Error deleting from partners:', partnersError);
-        throw partnersError;
-      }
-
-      // Then delete from players table
-      const { error: playerError } = await supabase
-        .from('tbl_players')
-        .delete()
-        .eq('id', playerId);
-
-      if (playerError) {
-        console.error('Error deleting player:', playerError);
-        throw playerError;
-      }
-
-      console.log('Player deleted successfully');
-      
-      toast({
-        title: "Success",
-        description: `${playerName} has been deleted successfully`,
-      });
-
-      // Refresh data immediately
-      await fetchAllPlayers();
-      if (selectedEvent) {
-        await fetchEventPairs();
-      }
-    } catch (error) {
-      console.error('Error deleting player:', error);
-      toast({
-        title: "Error",
-        description: `Failed to delete ${playerName}. Please try again.`,
-        variant: "destructive",
-      });
-    } finally {
-      setIsDeleting(null);
-    }
-  };
-
-  const handleClearDatabase = async () => {
-    if (!confirm("Are you sure you want to clear the entire database? This will delete all players and registrations. This action cannot be undone.")) {
-      return;
-    }
-
-    if (!confirm("This will permanently delete ALL data. Are you absolutely sure?")) {
-      return;
-    }
-
-    try {
-      console.log('Starting database clear process');
-      
-      // Delete all partners first
-      const { error: partnersError } = await supabase
-        .from('tbl_partners')
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000');
-
-      if (partnersError) {
-        console.error('Error clearing partners:', partnersError);
-        throw partnersError;
-      }
-
-      // Then delete all players
-      const { error: playersError } = await supabase
-        .from('tbl_players')
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000');
-
-      if (playersError) {
-        console.error('Error clearing players:', playersError);
-        throw playersError;
-      }
-
-      console.log('Database cleared successfully');
-
-      toast({
-        title: "Success",
-        description: "Database cleared successfully",
-      });
-
-      // Refresh all data
-      await fetchAllPlayers();
-      setEventPairs([]);
-      setRankings({});
-    } catch (error) {
-      console.error('Error clearing database:', error);
-      toast({
-        title: "Error",
-        description: "Failed to clear database. Please try again.",
         variant: "destructive",
       });
     }
