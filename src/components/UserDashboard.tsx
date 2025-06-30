@@ -18,6 +18,7 @@ interface UserDashboardProps {
 export const UserDashboard = ({ user, onBack, onLogout }: UserDashboardProps) => {
   const [editMode, setEditMode] = useState<'personal' | 'events' | null>(null);
   const [userEvents, setUserEvents] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -25,18 +26,34 @@ export const UserDashboard = ({ user, onBack, onLogout }: UserDashboardProps) =>
   }, [user.id]);
 
   const fetchUserEvents = async () => {
-    const { data, error } = await supabase
-      .from('tbl_partners')
-      .select(`
-        *,
-        partner:tbl_players!tbl_partners_partner_id_fkey(name)
-      `)
-      .eq('user_id', user.id);
+    setIsLoading(true);
+    try {
+      console.log('Fetching events for user:', user.id);
+      
+      const { data, error } = await supabase
+        .from('tbl_partners')
+        .select(`
+          *,
+          partner:tbl_players!tbl_partners_partner_id_fkey(name)
+        `)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('Error fetching user events:', error);
-    } else {
-      setUserEvents(data || []);
+      if (error) {
+        console.error('Error fetching user events:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load your registered events",
+          variant: "destructive",
+        });
+      } else {
+        console.log('User events data:', data);
+        setUserEvents(data || []);
+      }
+    } catch (error) {
+      console.error('Error in fetchUserEvents:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -66,11 +83,18 @@ export const UserDashboard = ({ user, onBack, onLogout }: UserDashboardProps) =>
 
   const handleEventUpdate = async (eventData: EventData) => {
     try {
-      // Delete existing entries
-      await supabase
+      console.log('Updating events with data:', eventData);
+      
+      // Delete existing entries for this user
+      const { error: deleteError } = await supabase
         .from('tbl_partners')
         .delete()
         .eq('user_id', user.id);
+
+      if (deleteError) {
+        console.error('Error deleting existing entries:', deleteError);
+        throw deleteError;
+      }
 
       // Insert new entries
       const partnerEntries = [];
@@ -92,11 +116,14 @@ export const UserDashboard = ({ user, onBack, onLogout }: UserDashboardProps) =>
       }
 
       if (partnerEntries.length > 0) {
-        const { error } = await supabase
+        const { error: insertError } = await supabase
           .from('tbl_partners')
           .insert(partnerEntries);
 
-        if (error) throw error;
+        if (insertError) {
+          console.error('Error inserting new entries:', insertError);
+          throw insertError;
+        }
       }
 
       toast({
@@ -104,7 +131,7 @@ export const UserDashboard = ({ user, onBack, onLogout }: UserDashboardProps) =>
         description: "Event selections updated successfully",
       });
       setEditMode(null);
-      fetchUserEvents();
+      await fetchUserEvents(); // Refresh the events list
     } catch (error) {
       console.error('Update error:', error);
       toast({
@@ -219,27 +246,73 @@ export const UserDashboard = ({ user, onBack, onLogout }: UserDashboardProps) =>
 
           <Card className="shadow-xl border-0">
             <CardHeader className="bg-gradient-to-r from-cyan-500 to-sky-500 text-white rounded-t-lg">
-              <CardTitle>Event Registrations</CardTitle>
+              <CardTitle>My Event Registrations</CardTitle>
             </CardHeader>
             <CardContent className="p-6 bg-white/90 backdrop-blur-sm">
-              {userEvents.length > 0 ? (
-                <div className="space-y-3">
+              {isLoading ? (
+                <p className="text-gray-500">Loading your events...</p>
+              ) : userEvents.length > 0 ? (
+                <div className="space-y-4">
                   {userEvents.map((event, index) => (
-                    <div key={event.id} className="border rounded p-3 bg-gradient-to-r from-cyan-50 to-sky-50">
-                      <p><strong>Event:</strong> {event.event_name}</p>
-                      <p><strong>Partner:</strong> {event.partner?.name || 'Partner not registered yet'}</p>
-                      {event.ranking && <p><strong>Ranking:</strong> {event.ranking}</p>}
+                    <div key={event.id} className="border rounded-lg p-4 bg-gradient-to-r from-cyan-50 to-sky-50">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-lg text-gray-800">{event.event_name}</h4>
+                          <p className="text-gray-600 mt-1">
+                            <strong>Partner:</strong> {event.partner?.name || "Partner not registered yet"}
+                          </p>
+                          {event.ranking && (
+                            <p className="text-gray-600 mt-1">
+                              <strong>Current Ranking:</strong> #{event.ranking}
+                            </p>
+                          )}
+                          <p className="text-sm text-gray-500 mt-2">
+                            Registered on: {new Date(event.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div className="ml-4">
+                          {event.partner?.name ? (
+                            <span className="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+                              Team Complete
+                            </span>
+                          ) : (
+                            <span className="inline-block bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">
+                              Waiting for Partner
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   ))}
+                  
+                  <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                    <h5 className="font-medium text-blue-800 mb-2">Registration Summary</h5>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-blue-600">Total Events:</span>
+                        <span className="ml-2 font-semibold">{userEvents.length}</span>
+                      </div>
+                      <div>
+                        <span className="text-blue-600">Complete Teams:</span>
+                        <span className="ml-2 font-semibold">
+                          {userEvents.filter(e => e.partner?.name).length}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               ) : (
-                <p className="text-gray-500">No events registered</p>
+                <div className="text-center py-8">
+                  <p className="text-gray-500 mb-4">No events registered yet</p>
+                  <p className="text-sm text-gray-400">Click "Edit Event Selections" to register for events</p>
+                </div>
               )}
+              
               <Button 
                 onClick={() => setEditMode('events')}
-                className="w-full mt-4 bg-gradient-to-r from-cyan-500 to-sky-500 hover:from-cyan-600 hover:to-sky-600"
+                className="w-full mt-6 bg-gradient-to-r from-cyan-500 to-sky-500 hover:from-cyan-600 hover:to-sky-600"
               >
-                Edit Event Selections
+                {userEvents.length > 0 ? 'Edit Event Selections' : 'Register for Events'}
               </Button>
             </CardContent>
           </Card>

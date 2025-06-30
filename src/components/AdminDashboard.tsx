@@ -21,6 +21,7 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
   const [rankings, setRankings] = useState<{ [key: string]: string }>({});
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState<'rankings' | 'players'>('rankings');
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -74,9 +75,22 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
     if (error) {
       console.error('Error fetching event pairs:', error);
     } else {
-      setEventPairs(data || []);
+      // Filter out duplicate teams - only show each team once
+      const uniqueTeams = new Map();
+      const filteredData = data?.filter(pair => {
+        if (!pair.partner_id) return true; // Show incomplete pairs
+        
+        const teamKey = [pair.user_id, pair.partner_id].sort().join('-');
+        if (uniqueTeams.has(teamKey)) {
+          return false; // Skip duplicate team
+        }
+        uniqueTeams.set(teamKey, true);
+        return true;
+      }) || [];
+
+      setEventPairs(filteredData);
       const initialRankings: { [key: string]: string } = {};
-      data?.forEach(pair => {
+      filteredData?.forEach(pair => {
         if (pair.ranking) {
           initialRankings[pair.id] = pair.ranking.toString();
         }
@@ -150,14 +164,21 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
       return;
     }
 
+    setIsDeleting(playerId);
+
     try {
+      console.log('Starting delete process for player:', playerId);
+      
       // First delete from partners table
       const { error: partnersError } = await supabase
         .from('tbl_partners')
         .delete()
         .or(`user_id.eq.${playerId},partner_id.eq.${playerId}`);
 
-      if (partnersError) throw partnersError;
+      if (partnersError) {
+        console.error('Error deleting from partners:', partnersError);
+        throw partnersError;
+      }
 
       // Then delete from players table
       const { error: playerError } = await supabase
@@ -165,22 +186,32 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
         .delete()
         .eq('id', playerId);
 
-      if (playerError) throw playerError;
+      if (playerError) {
+        console.error('Error deleting player:', playerError);
+        throw playerError;
+      }
 
+      console.log('Player deleted successfully');
+      
       toast({
         title: "Success",
         description: `${playerName} has been deleted successfully`,
       });
 
-      fetchAllPlayers();
-      if (selectedEvent) fetchEventPairs();
+      // Refresh data immediately
+      await fetchAllPlayers();
+      if (selectedEvent) {
+        await fetchEventPairs();
+      }
     } catch (error) {
       console.error('Error deleting player:', error);
       toast({
         title: "Error",
-        description: "Failed to delete player",
+        description: `Failed to delete ${playerName}. Please try again.`,
         variant: "destructive",
       });
+    } finally {
+      setIsDeleting(null);
     }
   };
 
@@ -189,36 +220,51 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
       return;
     }
 
+    if (!confirm("This will permanently delete ALL data. Are you absolutely sure?")) {
+      return;
+    }
+
     try {
+      console.log('Starting database clear process');
+      
       // Delete all partners first
       const { error: partnersError } = await supabase
         .from('tbl_partners')
         .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+        .neq('id', '00000000-0000-0000-0000-000000000000');
 
-      if (partnersError) throw partnersError;
+      if (partnersError) {
+        console.error('Error clearing partners:', partnersError);
+        throw partnersError;
+      }
 
       // Then delete all players
       const { error: playersError } = await supabase
         .from('tbl_players')
         .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+        .neq('id', '00000000-0000-0000-0000-000000000000');
 
-      if (playersError) throw playersError;
+      if (playersError) {
+        console.error('Error clearing players:', playersError);
+        throw playersError;
+      }
+
+      console.log('Database cleared successfully');
 
       toast({
         title: "Success",
         description: "Database cleared successfully",
       });
 
-      fetchAllPlayers();
+      // Refresh all data
+      await fetchAllPlayers();
       setEventPairs([]);
       setRankings({});
     } catch (error) {
       console.error('Error clearing database:', error);
       toast({
         title: "Error",
-        description: "Failed to clear database",
+        description: "Failed to clear database. Please try again.",
         variant: "destructive",
       });
     }
@@ -294,7 +340,7 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
 
               {selectedEvent && (
                 <div>
-                  <h3 className="text-lg font-semibold mb-4">Pairs for {selectedEvent}</h3>
+                  <h3 className="text-lg font-semibold mb-4">Teams for {selectedEvent}</h3>
                   
                   {eventPairs.length > 0 ? (
                     <>
@@ -302,8 +348,7 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
                         <TableHeader>
                           <TableRow>
                             <TableHead>S.No</TableHead>
-                            <TableHead>Player 1</TableHead>
-                            <TableHead>Player 2</TableHead>
+                            <TableHead>Team</TableHead>
                             <TableHead>Ranking (1-{eventPairs.length})</TableHead>
                           </TableRow>
                         </TableHeader>
@@ -311,8 +356,9 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
                           {eventPairs.map((pair, index) => (
                             <TableRow key={pair.id}>
                               <TableCell>{index + 1}</TableCell>
-                              <TableCell className="font-medium">{pair.user?.name}</TableCell>
-                              <TableCell>{pair.partner?.name || "Partner not registered yet"}</TableCell>
+                              <TableCell className="font-medium">
+                                {pair.user?.name} & {pair.partner?.name || "Partner not registered yet"}
+                              </TableCell>
                               <TableCell>
                                 <Input
                                   type="number"
@@ -337,7 +383,7 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
                       </Button>
                     </>
                   ) : (
-                    <p className="text-gray-500 text-center py-8">No pairs registered for this event yet.</p>
+                    <p className="text-gray-500 text-center py-8">No teams registered for this event yet.</p>
                   )}
                 </div>
               )}
@@ -399,10 +445,11 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
                             onClick={() => handleDeletePlayer(player.id, player.name)}
                             variant="destructive"
                             size="sm"
-                            className="bg-red-500 hover:bg-red-600"
+                            disabled={isDeleting === player.id}
+                            className="bg-red-500 hover:bg-red-600 disabled:opacity-50"
                           >
                             <Trash2 className="h-4 w-4 mr-1" />
-                            Delete
+                            {isDeleting === player.id ? "Deleting..." : "Delete"}
                           </Button>
                         </TableCell>
                       </TableRow>
