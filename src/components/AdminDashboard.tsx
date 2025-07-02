@@ -93,59 +93,6 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
     }
   };
 
-  const fetchEventPairs = async () => {
-    try {
-      console.log('Fetching event pairs for:', selectedEvent);
-      const { data, error } = await supabase
-        .from('tbl_partners')
-        .select(`
-          *,
-          user:tbl_players!tbl_partners_user_id_fkey(name),
-          partner:tbl_players!tbl_partners_partner_id_fkey(name)
-        `)
-        .eq('event_name', selectedEvent)
-        .order('ranking', { ascending: true, nullsFirst: false });
-
-      if (error) {
-        console.error('Error fetching event pairs:', error);
-        toast({
-          title: "Error",
-          description: "Failed to fetch event pairs",
-          variant: "destructive",
-        });
-      } else {
-        const uniqueTeams = new Map();
-        const filteredData = data?.filter(pair => {
-          if (!pair.partner_id) return true;
-          
-          const teamKey = [pair.user_id, pair.partner_id].sort().join('-');
-          if (uniqueTeams.has(teamKey)) {
-            return false;
-          }
-          uniqueTeams.set(teamKey, true);
-          return true;
-        }) || [];
-
-        console.log('Event pairs filtered:', filteredData.length, 'unique teams');
-        setEventPairs(filteredData);
-        const initialRankings: { [key: string]: string } = {};
-        filteredData?.forEach(pair => {
-          if (pair.ranking) {
-            initialRankings[pair.id] = pair.ranking.toString();
-          }
-        });
-        setRankings(initialRankings);
-      }
-    } catch (error) {
-      console.error('Unexpected error fetching event pairs:', error);
-      toast({
-        title: "Error",
-        description: "Unexpected error occurred while fetching event pairs",
-        variant: "destructive",
-      });
-    }
-  };
-
   const handleDeletePlayer = async (playerId: string, playerName: string) => {
     if (!confirm("Are you sure you want to delete this name from the database?")) {
       return;
@@ -156,8 +103,10 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
     try {
       console.log('Starting delete process for player:', playerId, playerName);
       
+      // First, delete all partner entries for this player using a more robust query
       console.log('Deleting partner entries...');
       
+      // Delete entries where user is the main user
       const { error: partnersError1 } = await supabase
         .from('tbl_partners')
         .delete()
@@ -167,6 +116,7 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
         console.error('Error deleting user partner entries:', partnersError1);
       }
 
+      // Delete entries where user is the partner
       const { error: partnersError2 } = await supabase
         .from('tbl_partners')
         .delete()
@@ -178,6 +128,7 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
 
       console.log('Partner entries deletion completed');
 
+      // Then delete the player
       console.log('Deleting player from tbl_players...');
       const { error: playerError } = await supabase
         .from('tbl_players')
@@ -195,6 +146,7 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
         description: "Success",
       });
 
+      // Refresh the data immediately
       console.log('Refreshing player list...');
       await fetchAllPlayers();
       
@@ -226,18 +178,17 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
     }
 
     try {
-      console.log('Starting comprehensive database clear process');
+      console.log('Starting database clear process');
       
-      // Delete all partners first
+      // Delete all partners first (to avoid foreign key constraints)
       console.log('Clearing all partner entries...');
       const { error: partnersError } = await supabase
         .from('tbl_partners')
         .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000');
+        .gte('id', '00000000-0000-0000-0000-000000000000'); // This will match all UUIDs
 
       if (partnersError) {
         console.error('Error clearing partners:', partnersError);
-        throw partnersError;
       }
       console.log('All partner entries cleared');
 
@@ -246,11 +197,10 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
       const { error: playersError } = await supabase
         .from('tbl_players')
         .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000');
+        .gte('id', '00000000-0000-0000-0000-000000000000'); // This will match all UUIDs
 
       if (playersError) {
         console.error('Error clearing players:', playersError);
-        throw playersError;
       }
       console.log('All player entries cleared');
 
@@ -269,6 +219,60 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to clear database. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const fetchEventPairs = async () => {
+    try {
+      console.log('Fetching event pairs for:', selectedEvent);
+      const { data, error } = await supabase
+        .from('tbl_partners')
+        .select(`
+          *,
+          user:tbl_players!tbl_partners_user_id_fkey(name),
+          partner:tbl_players!tbl_partners_partner_id_fkey(name)
+        `)
+        .eq('event_name', selectedEvent)
+        .order('ranking', { ascending: true, nullsFirst: false });
+
+      if (error) {
+        console.error('Error fetching event pairs:', error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch event pairs",
+          variant: "destructive",
+        });
+      } else {
+        // Filter out duplicate teams - only show each team once
+        const uniqueTeams = new Map();
+        const filteredData = data?.filter(pair => {
+          if (!pair.partner_id) return true; // Show incomplete pairs
+          
+          const teamKey = [pair.user_id, pair.partner_id].sort().join('-');
+          if (uniqueTeams.has(teamKey)) {
+            return false; // Skip duplicate team
+          }
+          uniqueTeams.set(teamKey, true);
+          return true;
+        }) || [];
+
+        console.log('Event pairs filtered:', filteredData.length, 'unique teams');
+        setEventPairs(filteredData);
+        const initialRankings: { [key: string]: string } = {};
+        filteredData?.forEach(pair => {
+          if (pair.ranking) {
+            initialRankings[pair.id] = pair.ranking.toString();
+          }
+        });
+        setRankings(initialRankings);
+      }
+    } catch (error) {
+      console.error('Unexpected error fetching event pairs:', error);
+      toast({
+        title: "Error",
+        description: "Unexpected error occurred while fetching event pairs",
         variant: "destructive",
       });
     }
@@ -364,6 +368,7 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
       </div>
 
       <div className="container mx-auto px-4 py-8">
+        {/* Tab Navigation */}
         <div className="flex gap-4 mb-8">
           <Button
             onClick={() => setActiveTab('rankings')}
@@ -467,6 +472,7 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
+              {/* Search and Actions */}
               <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
                 <div className="relative flex-1 max-w-md">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -487,6 +493,7 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
                 </Button>
               </div>
 
+              {/* Players Table */}
               <div className="rounded-lg overflow-hidden border">
                 <Table>
                   <TableHeader>
