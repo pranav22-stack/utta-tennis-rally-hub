@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -94,34 +95,61 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
   };
 
   const handleDeletePlayer = async (playerId: string, playerName: string) => {
-    if (!confirm(`Are you sure you want to remove ${playerName} from the display? (Note: This will only remove them from the screen, not from the database)`)) {
+    if (!confirm("Are you sure you want to delete this name from the database?")) {
       return;
     }
 
     setIsDeleting(playerId);
 
     try {
-      console.log('Removing player from frontend display only:', playerId, playerName);
+      console.log('Starting delete process for player:', playerId, playerName);
       
-      // Remove player from local state only - no database operations
-      setAllPlayers(prevPlayers => prevPlayers.filter(player => player.id !== playerId));
-      
-      // Also remove from event pairs if they exist there
-      setEventPairs(prevPairs => prevPairs.filter(pair => 
-        pair.user_id !== playerId && pair.partner_id !== playerId
-      ));
+      // First, delete all partner entries for this player
+      console.log('Deleting partner entries...');
+      const { error: partnersError } = await supabase
+        .from('tbl_partners')
+        .delete()
+        .or(`user_id.eq.${playerId},partner_id.eq.${playerId}`);
+
+      if (partnersError) {
+        console.error('Error deleting partner entries:', partnersError);
+        throw new Error(`Failed to delete partner entries: ${partnersError.message}`);
+      }
+      console.log('Partner entries deleted successfully');
+
+      // Then delete the player
+      console.log('Deleting player from tbl_players...');
+      const { error: playerError } = await supabase
+        .from('tbl_players')
+        .delete()
+        .eq('id', playerId);
+
+      if (playerError) {
+        console.error('Error deleting player:', playerError);
+        throw new Error(`Failed to delete player: ${playerError.message}`);
+      }
+      console.log('Player deleted successfully from database');
 
       toast({
         title: "Success",
-        description: `${playerName} has been removed from the display (database unchanged)`,
+        description: "Success",
       });
+
+      // Refresh the data immediately
+      console.log('Refreshing player list...');
+      await fetchAllPlayers();
       
-      console.log('Player removed from frontend display successfully');
+      if (selectedEvent) {
+        console.log('Refreshing event pairs...');
+        await fetchEventPairs();
+      }
+      
+      console.log('Data refresh completed');
     } catch (error) {
-      console.error('Error removing player from display:', error);
+      console.error('Error in delete operation:', error);
       toast({
         title: "Error",
-        description: `Failed to remove ${playerName} from display. Please try again.`,
+        description: error instanceof Error ? error.message : `Failed to delete ${playerName}. Please try again.`,
         variant: "destructive",
       });
     } finally {
