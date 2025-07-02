@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { EventData } from "./RegistrationForm";
 import { useToast } from "@/hooks/use-toast";
@@ -12,9 +12,10 @@ interface EventSelectionFormProps {
   onSubmit: (data: EventData) => void;
   onBack: () => void;
   isSubmitting: boolean;
+  initialData?: EventData;
 }
 
-export const EventSelectionForm = ({ onSubmit, onBack, isSubmitting }: EventSelectionFormProps) => {
+export const EventSelectionForm = ({ onSubmit, onBack, isSubmitting, initialData }: EventSelectionFormProps) => {
   const [eventData, setEventData] = useState<EventData>({
     event1: "",
     partner1: "",
@@ -25,6 +26,14 @@ export const EventSelectionForm = ({ onSubmit, onBack, isSubmitting }: EventSele
   const { events } = useEventData();
   const { availablePartners: availablePartners1 } = usePartnerData(eventData.event1);
   const { availablePartners: availablePartners2 } = usePartnerData(eventData.event2);
+
+  // Load initial data when component mounts or initialData changes
+  useEffect(() => {
+    if (initialData) {
+      console.log('Loading initial event data:', initialData);
+      setEventData(initialData);
+    }
+  }, [initialData]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,7 +123,7 @@ export const EventSelectionForm = ({ onSubmit, onBack, isSubmitting }: EventSele
           className="flex-1 bg-green-600 hover:bg-green-700"
           disabled={isSubmitting}
         >
-          {isSubmitting ? "Submitting..." : "Complete Registration"}
+          {isSubmitting ? "Submitting..." : "Update Registration"}
         </Button>
       </div>
     </form>

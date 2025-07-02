@@ -146,6 +146,28 @@ export const UserDashboard = ({ user, onBack, onLogout }: UserDashboardProps) =>
     }
   };
 
+  // Convert userEvents to EventData format for the EventSelectionForm
+  const getInitialEventData = (): EventData => {
+    const eventData: EventData = {
+      event1: "",
+      partner1: "",
+      event2: "",
+      partner2: "",
+    };
+
+    if (userEvents.length > 0) {
+      eventData.event1 = userEvents[0].event_name;
+      eventData.partner1 = userEvents[0].partner_id || "Partner not registered yet";
+    }
+
+    if (userEvents.length > 1) {
+      eventData.event2 = userEvents[1].event_name;
+      eventData.partner2 = userEvents[1].partner_id || "Partner not registered yet";
+    }
+
+    return eventData;
+  };
+
   if (editMode === 'personal') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-cyan-50 to-sky-50">
@@ -195,6 +217,7 @@ export const UserDashboard = ({ user, onBack, onLogout }: UserDashboardProps) =>
                 onSubmit={handleEventUpdate}
                 onBack={() => setEditMode(null)}
                 isSubmitting={false}
+                initialData={getInitialEventData()}
               />
             </CardContent>
           </Card>
