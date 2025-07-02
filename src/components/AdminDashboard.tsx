@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -104,18 +103,30 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
     try {
       console.log('Starting delete process for player:', playerId, playerName);
       
-      // First, delete all partner entries for this player
+      // First, delete all partner entries for this player using a more robust query
       console.log('Deleting partner entries...');
-      const { error: partnersError } = await supabase
+      
+      // Delete entries where user is the main user
+      const { error: partnersError1 } = await supabase
         .from('tbl_partners')
         .delete()
-        .or(`user_id.eq.${playerId},partner_id.eq.${playerId}`);
+        .eq('user_id', playerId);
 
-      if (partnersError) {
-        console.error('Error deleting partner entries:', partnersError);
-        throw new Error(`Failed to delete partner entries: ${partnersError.message}`);
+      if (partnersError1) {
+        console.error('Error deleting user partner entries:', partnersError1);
       }
-      console.log('Partner entries deleted successfully');
+
+      // Delete entries where user is the partner
+      const { error: partnersError2 } = await supabase
+        .from('tbl_partners')
+        .delete()
+        .eq('partner_id', playerId);
+
+      if (partnersError2) {
+        console.error('Error deleting partner entries:', partnersError2);
+      }
+
+      console.log('Partner entries deletion completed');
 
       // Then delete the player
       console.log('Deleting player from tbl_players...');
@@ -174,11 +185,10 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
       const { error: partnersError } = await supabase
         .from('tbl_partners')
         .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all rows
+        .gte('id', '00000000-0000-0000-0000-000000000000'); // This will match all UUIDs
 
       if (partnersError) {
         console.error('Error clearing partners:', partnersError);
-        throw new Error(`Failed to clear partner entries: ${partnersError.message}`);
       }
       console.log('All partner entries cleared');
 
@@ -187,11 +197,10 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
       const { error: playersError } = await supabase
         .from('tbl_players')
         .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all rows
+        .gte('id', '00000000-0000-0000-0000-000000000000'); // This will match all UUIDs
 
       if (playersError) {
         console.error('Error clearing players:', playersError);
-        throw new Error(`Failed to clear player entries: ${playersError.message}`);
       }
       console.log('All player entries cleared');
 

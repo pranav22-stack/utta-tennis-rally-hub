@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -52,6 +51,11 @@ export const UserDashboard = ({ user, onBack, onLogout }: UserDashboardProps) =>
       }
     } catch (error) {
       console.error('Error in fetchUserEvents:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while loading events",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
