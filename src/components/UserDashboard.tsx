@@ -30,12 +30,12 @@ export const UserDashboard = ({ user, onBack, onLogout }: UserDashboardProps) =>
       console.log('Fetching events for user:', user.id);
       
       const { data, error } = await supabase
-        .from('tbl_partners')
+        .from('registrations')
         .select(`
           *,
-          partner:tbl_players!tbl_partners_partner_id_fkey(name)
+          partner:players!registrations_partner_id_fkey(name)
         `)
-        .eq('user_id', user.id)
+        .eq('player_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -64,7 +64,7 @@ export const UserDashboard = ({ user, onBack, onLogout }: UserDashboardProps) =>
   const handlePersonalDetailsUpdate = async (data: PlayerData) => {
     try {
       const { error } = await supabase
-        .from('tbl_players')
+        .from('players')
         .update(data)
         .eq('id', user.id);
 
@@ -97,49 +97,49 @@ export const UserDashboard = ({ user, onBack, onLogout }: UserDashboardProps) =>
       if (eventsToRegister.length > 2) {
         toast({
           title: "Registration Restricted",
-          description: "You have already registered for two events. Multiple registrations beyond two are not allowed.",
+          description: "You can only register for a maximum of two events.",
           variant: "destructive",
         });
         return;
       }
       
-      // Delete existing entries for this user
+      // Delete existing registrations for this user
       const { error: deleteError } = await supabase
-        .from('tbl_partners')
+        .from('registrations')
         .delete()
-        .eq('user_id', user.id);
+        .eq('player_id', user.id);
 
       if (deleteError) {
-        console.error('Error deleting existing entries:', deleteError);
+        console.error('Error deleting existing registrations:', deleteError);
         throw deleteError;
       }
 
-      // Insert new entries
-      const partnerEntries = [];
+      // Insert new registrations
+      const registrationEntries = [];
       
       if (eventData.event1) {
-        partnerEntries.push({
+        registrationEntries.push({
           event_name: eventData.event1,
-          user_id: user.id,
+          player_id: user.id,
           partner_id: eventData.partner1 === "Partner not registered yet" ? null : eventData.partner1,
         });
       }
       
       if (eventData.event2) {
-        partnerEntries.push({
+        registrationEntries.push({
           event_name: eventData.event2,
-          user_id: user.id,
+          player_id: user.id,
           partner_id: eventData.partner2 === "Partner not registered yet" ? null : eventData.partner2,
         });
       }
 
-      if (partnerEntries.length > 0) {
+      if (registrationEntries.length > 0) {
         const { error: insertError } = await supabase
-          .from('tbl_partners')
-          .insert(partnerEntries);
+          .from('registrations')
+          .insert(registrationEntries);
 
         if (insertError) {
-          console.error('Error inserting new entries:', insertError);
+          console.error('Error inserting new registrations:', insertError);
           throw insertError;
         }
       }
@@ -149,7 +149,7 @@ export const UserDashboard = ({ user, onBack, onLogout }: UserDashboardProps) =>
         description: "Event selections updated successfully",
       });
       setEditMode(null);
-      await fetchUserEvents(); // Refresh the events list
+      await fetchUserEvents();
     } catch (error) {
       console.error('Update error:', error);
       toast({
@@ -213,7 +213,7 @@ export const UserDashboard = ({ user, onBack, onLogout }: UserDashboardProps) =>
   if (editMode === 'events') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-cyan-50 to-sky-50">
-        <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 text-white py-6">
+        <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 text-while py-6">
           <div className="container mx-auto px-4">
             <div className="flex items-center gap-4">
               <Button variant="ghost" size="sm" onClick={() => setEditMode(null)} className="text-white hover:bg-white/20">
@@ -275,8 +275,8 @@ export const UserDashboard = ({ user, onBack, onLogout }: UserDashboardProps) =>
               <p><strong>City:</strong> {user.city}</p>
               <p><strong>Shirt Size:</strong> {user.shirt_size}</p>
               <p><strong>Short Size:</strong> {user.short_size}</p>
-              <p><strong>Food Preference:</strong> {user.food_pref}</p>
-              <p><strong>Accommodation:</strong> {user.stay_y_or_n ? 'Yes' : 'No'}</p>
+              <p><strong>Food Preference:</strong> {user.food_preference}</p>
+              <p><strong>Accommodation:</strong> {user.accommodation_needed ? 'Yes' : 'No'}</p>
               <p><strong>Fee Paid:</strong> {user.fee_paid ? 'Yes' : 'No'}</p>
               <Button 
                 onClick={() => setEditMode('personal')}

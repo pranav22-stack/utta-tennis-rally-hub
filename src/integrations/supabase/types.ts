@@ -9,113 +9,113 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      tbl_eventname: {
+      events: {
         Row: {
           created_at: string | null
-          event_name: string
           id: string
+          name: string
         }
         Insert: {
           created_at?: string | null
-          event_name: string
           id?: string
+          name: string
         }
         Update: {
           created_at?: string | null
-          event_name?: string
           id?: string
+          name?: string
         }
         Relationships: []
       }
-      tbl_partners: {
+      players: {
+        Row: {
+          accommodation_needed: boolean | null
+          city: string
+          created_at: string | null
+          date_of_birth: string
+          fee_paid: boolean | null
+          food_preference: string
+          id: string
+          name: string
+          shirt_size: string
+          short_size: string
+          updated_at: string | null
+          whatsapp_number: string
+        }
+        Insert: {
+          accommodation_needed?: boolean | null
+          city: string
+          created_at?: string | null
+          date_of_birth: string
+          fee_paid?: boolean | null
+          food_preference: string
+          id?: string
+          name: string
+          shirt_size: string
+          short_size: string
+          updated_at?: string | null
+          whatsapp_number: string
+        }
+        Update: {
+          accommodation_needed?: boolean | null
+          city?: string
+          created_at?: string | null
+          date_of_birth?: string
+          fee_paid?: boolean | null
+          food_preference?: string
+          id?: string
+          name?: string
+          shirt_size?: string
+          short_size?: string
+          updated_at?: string | null
+          whatsapp_number?: string
+        }
+        Relationships: []
+      }
+      registrations: {
         Row: {
           created_at: string | null
           event_name: string
           id: string
           partner_id: string | null
+          player_id: string
           ranking: number | null
           updated_at: string | null
-          user_id: string
         }
         Insert: {
           created_at?: string | null
           event_name: string
           id?: string
           partner_id?: string | null
+          player_id: string
           ranking?: number | null
           updated_at?: string | null
-          user_id: string
         }
         Update: {
           created_at?: string | null
           event_name?: string
           id?: string
           partner_id?: string | null
+          player_id?: string
           ranking?: number | null
           updated_at?: string | null
-          user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "tbl_partners_partner_id_fkey"
+            foreignKeyName: "registrations_partner_id_fkey"
             columns: ["partner_id"]
             isOneToOne: false
-            referencedRelation: "tbl_players"
+            referencedRelation: "players"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "tbl_partners_user_id_fkey"
-            columns: ["user_id"]
+            foreignKeyName: "registrations_player_id_fkey"
+            columns: ["player_id"]
             isOneToOne: false
-            referencedRelation: "tbl_players"
+            referencedRelation: "players"
             referencedColumns: ["id"]
           },
         ]
-      }
-      tbl_players: {
-        Row: {
-          city: string
-          created_at: string | null
-          date_of_birth: string
-          fee_paid: boolean
-          food_pref: string
-          id: string
-          name: string
-          shirt_size: string
-          short_size: string
-          stay_y_or_n: boolean
-          updated_at: string | null
-          whatsapp_number: string
-        }
-        Insert: {
-          city: string
-          created_at?: string | null
-          date_of_birth: string
-          fee_paid?: boolean
-          food_pref: string
-          id?: string
-          name: string
-          shirt_size: string
-          short_size: string
-          stay_y_or_n?: boolean
-          updated_at?: string | null
-          whatsapp_number: string
-        }
-        Update: {
-          city?: string
-          created_at?: string | null
-          date_of_birth?: string
-          fee_paid?: boolean
-          food_pref?: string
-          id?: string
-          name?: string
-          shirt_size?: string
-          short_size?: string
-          stay_y_or_n?: boolean
-          updated_at?: string | null
-          whatsapp_number?: string
-        }
-        Relationships: []
       }
     }
     Views: {

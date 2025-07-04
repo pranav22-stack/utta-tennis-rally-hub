@@ -20,7 +20,7 @@ export const EventSelector = ({
   placeholder = "Select an event" 
 }: EventSelectorProps) => {
   const filteredEvents = excludeEvent 
-    ? events.filter(event => event.event_name !== excludeEvent)
+    ? events.filter(event => event.name !== excludeEvent)
     : events;
 
   return (
@@ -32,8 +32,8 @@ export const EventSelector = ({
         </SelectTrigger>
         <SelectContent>
           {filteredEvents.map((event) => (
-            <SelectItem key={event.id} value={event.event_name}>
-              {event.event_name}
+            <SelectItem key={event.id} value={event.name}>
+              {event.name}
             </SelectItem>
           ))}
         </SelectContent>

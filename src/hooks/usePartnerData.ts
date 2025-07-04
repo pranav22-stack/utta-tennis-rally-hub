@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -18,11 +19,11 @@ export const usePartnerData = (eventName: string) => {
       
       // Get all players who have registered for this event
       const { data: registeredEntries, error: registeredError } = await supabase
-        .from('tbl_partners')
+        .from('registrations')
         .select(`
-          user_id,
+          player_id,
           partner_id,
-          tbl_players!tbl_partners_user_id_fkey(id, name)
+          players!registrations_player_id_fkey(id, name)
         `)
         .eq('event_name', eventName);
 
@@ -44,7 +45,7 @@ export const usePartnerData = (eventName: string) => {
       const playersWithPartners = new Set();
       registeredEntries.forEach(entry => {
         if (entry.partner_id) {
-          playersWithPartners.add(entry.user_id);
+          playersWithPartners.add(entry.player_id);
           playersWithPartners.add(entry.partner_id);
         }
       });
@@ -53,10 +54,10 @@ export const usePartnerData = (eventName: string) => {
 
       // Filter out players who already have partners, keeping only those without partners
       const availablePlayers = registeredEntries
-        .filter(entry => !playersWithPartners.has(entry.user_id))
+        .filter(entry => !playersWithPartners.has(entry.player_id))
         .map(entry => ({
-          user_id: entry.user_id,
-          tbl_players: entry.tbl_players
+          user_id: entry.player_id,
+          tbl_players: entry.players
         }));
 
       console.log('Available partners for', eventName, ':', availablePlayers);

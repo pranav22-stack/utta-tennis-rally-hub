@@ -13,9 +13,9 @@ export const useEventData = () => {
 
   const fetchEvents = async () => {
     const { data, error } = await supabase
-      .from('tbl_eventname')
+      .from('events')
       .select('*')
-      .order('event_name');
+      .order('name');
 
     if (error) {
       console.error('Error fetching events:', error);

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,8 +18,8 @@ export interface PlayerData {
   city: string;
   shirt_size: string;
   short_size: string;
-  food_pref: string;
-  stay_y_or_n: boolean;
+  food_preference: string;
+  accommodation_needed: boolean;
   fee_paid: boolean;
 }
 
@@ -40,8 +39,8 @@ export const RegistrationForm = ({ onBack }: RegistrationFormProps) => {
     city: "",
     shirt_size: "",
     short_size: "",
-    food_pref: "",
-    stay_y_or_n: false,
+    food_preference: "",
+    accommodation_needed: false,
     fee_paid: false,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -54,9 +53,9 @@ export const RegistrationForm = ({ onBack }: RegistrationFormProps) => {
 
   const checkExistingRegistrations = async (playerId: string) => {
     const { data, error } = await supabase
-      .from('tbl_partners')
+      .from('registrations')
       .select('*')
-      .eq('user_id', playerId);
+      .eq('player_id', playerId);
 
     if (error) {
       console.error('Error checking existing registrations:', error);
@@ -71,7 +70,7 @@ export const RegistrationForm = ({ onBack }: RegistrationFormProps) => {
     try {
       // Check if player already exists
       const { data: existingPlayer, error: playerCheckError } = await supabase
-        .from('tbl_players')
+        .from('players')
         .select('id')
         .eq('whatsapp_number', playerData.whatsapp_number)
         .maybeSingle();
@@ -100,7 +99,7 @@ export const RegistrationForm = ({ onBack }: RegistrationFormProps) => {
         
         // Update existing player data
         const { error: updateError } = await supabase
-          .from('tbl_players')
+          .from('players')
           .update(playerData)
           .eq('id', playerId);
 
@@ -108,7 +107,7 @@ export const RegistrationForm = ({ onBack }: RegistrationFormProps) => {
       } else {
         // Insert new player data
         const { data: player, error: playerError } = await supabase
-          .from('tbl_players')
+          .from('players')
           .insert([playerData])
           .select()
           .single();
@@ -135,48 +134,48 @@ export const RegistrationForm = ({ onBack }: RegistrationFormProps) => {
         return;
       }
 
-      // Insert partner entries
-      const partnerEntries = [];
+      // Insert registrations
+      const registrationEntries = [];
       
       if (eventData.event1) {
-        partnerEntries.push({
+        registrationEntries.push({
           event_name: eventData.event1,
-          user_id: playerId,
+          player_id: playerId,
           partner_id: eventData.partner1 === "Partner not registered yet" ? null : eventData.partner1,
         });
       }
       
       if (eventData.event2) {
-        partnerEntries.push({
+        registrationEntries.push({
           event_name: eventData.event2,
-          user_id: playerId,
+          player_id: playerId,
           partner_id: eventData.partner2 === "Partner not registered yet" ? null : eventData.partner2,
         });
       }
 
-      if (partnerEntries.length > 0) {
-        const { error: partnersError } = await supabase
-          .from('tbl_partners')
-          .insert(partnerEntries);
+      if (registrationEntries.length > 0) {
+        const { error: registrationsError } = await supabase
+          .from('registrations')
+          .insert(registrationEntries);
 
-        if (partnersError) throw partnersError;
+        if (registrationsError) throw registrationsError;
       }
 
-      // Update existing partner entries if partners were selected
+      // Update existing registrations if partners were selected
       if (eventData.partner1 && eventData.partner1 !== "Partner not registered yet") {
         await supabase
-          .from('tbl_partners')
+          .from('registrations')
           .update({ partner_id: playerId })
-          .eq('user_id', eventData.partner1)
+          .eq('player_id', eventData.partner1)
           .eq('event_name', eventData.event1)
           .is('partner_id', null);
       }
 
       if (eventData.partner2 && eventData.partner2 !== "Partner not registered yet") {
         await supabase
-          .from('tbl_partners')
+          .from('registrations')
           .update({ partner_id: playerId })
-          .eq('user_id', eventData.partner2)
+          .eq('player_id', eventData.partner2)
           .eq('event_name', eventData.event2)
           .is('partner_id', null);
       }

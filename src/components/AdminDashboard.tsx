@@ -40,9 +40,9 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
     try {
       console.log('Fetching events...');
       const { data, error } = await supabase
-        .from('tbl_eventname')
+        .from('events')
         .select('*')
-        .order('event_name');
+        .order('name');
 
       if (error) {
         console.error('Error fetching events:', error);
@@ -69,7 +69,7 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
     try {
       console.log('Fetching all players...');
       const { data, error } = await supabase
-        .from('tbl_players')
+        .from('players')
         .select('*')
         .order('name');
 
@@ -95,68 +95,42 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
   };
 
   const handleDeletePlayer = async (playerId: string, playerName: string) => {
-    if (!confirm(`Are you sure you want to delete ${playerName} from the database? This will also remove all their event registrations.`)) {
+    if (!confirm(`Are you sure you want to delete ${playerName}? This will automatically remove all their event registrations due to database constraints.`)) {
       return;
     }
 
     setIsDeleting(playerId);
 
     try {
-      console.log('Starting delete process for player:', playerId, playerName);
+      console.log('Deleting player:', playerId, playerName);
       
-      // First, delete all partner entries for this player
-      console.log('Deleting partner entries...');
-      
-      // Delete entries where user is the main user
-      const { error: partnersError1 } = await supabase
-        .from('tbl_partners')
-        .delete()
-        .eq('user_id', playerId);
-
-      if (partnersError1) {
-        console.error('Error deleting user partner entries:', partnersError1);
-      }
-
-      // Delete entries where user is the partner
-      const { error: partnersError2 } = await supabase
-        .from('tbl_partners')
-        .delete()
-        .eq('partner_id', playerId);
-
-      if (partnersError2) {
-        console.error('Error deleting partner entries:', partnersError2);
-      }
-
-      console.log('Partner entries deletion completed');
-
-      // Then delete the player
-      console.log('Deleting player from tbl_players...');
-      const { error: playerError } = await supabase
-        .from('tbl_players')
+      // With CASCADE delete, we only need to delete the player
+      // All registrations will be automatically deleted
+      const { error } = await supabase
+        .from('players')
         .delete()
         .eq('id', playerId);
 
-      if (playerError) {
-        console.error('Error deleting player:', playerError);
-        throw new Error(`Failed to delete player: ${playerError.message}`);
+      if (error) {
+        console.error('Error deleting player:', error);
+        throw new Error(`Failed to delete player: ${error.message}`);
       }
+      
       console.log('Player deleted successfully from database');
 
-      // Immediately update the UI by removing the player from the state
+      // Update the UI immediately
       setAllPlayers(prev => prev.filter(player => player.id !== playerId));
 
       toast({
         title: "Success",
-        description: `${playerName} has been successfully deleted from the database.`,
+        description: `${playerName} has been successfully deleted along with all registrations.`,
       });
 
-      // Also refresh event pairs if needed
+      // Refresh event pairs if needed
       if (selectedEvent) {
-        console.log('Refreshing event pairs...');
         await fetchEventPairs();
       }
       
-      console.log('Delete operation completed successfully');
     } catch (error) {
       console.error('Error in delete operation:', error);
       toast({
@@ -170,11 +144,7 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
   };
 
   const handleClearDatabase = async () => {
-    if (!confirm("⚠️ WARNING: This will permanently delete ALL player registrations and event data from the database. This action cannot be undone. Are you absolutely sure?")) {
-      return;
-    }
-
-    if (!confirm("This will clear the entire database including all players like Palak Goyal and their multiple registrations. Type 'CLEAR' if you want to proceed.")) {
+    if (!confirm("⚠️ WARNING: This will permanently delete ALL players and registrations. This action cannot be undone. Are you absolutely sure?")) {
       return;
     }
 
@@ -190,37 +160,22 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
     setIsClearingDatabase(true);
 
     try {
-      console.log('Starting comprehensive database clear process');
+      console.log('Clearing database...');
       
-      // Step 1: Delete all partner entries first (to avoid foreign key constraints)
-      console.log('Clearing all partner entries...');
-      const { error: partnersError } = await supabase
-        .from('tbl_partners')
-        .delete()
-        .gte('created_at', '1900-01-01'); // This will match all records
-
-      if (partnersError) {
-        console.error('Error clearing partners:', partnersError);
-        throw new Error(`Failed to clear partner entries: ${partnersError.message}`);
-      }
-      console.log('All partner entries cleared successfully');
-
-      // Step 2: Delete all players
-      console.log('Clearing all player entries...');
+      // Delete all players (CASCADE will handle registrations)
       const { error: playersError } = await supabase
-        .from('tbl_players')
+        .from('players')
         .delete()
-        .gte('created_at', '1900-01-01'); // This will match all records
+        .gte('created_at', '1900-01-01');
 
       if (playersError) {
         console.error('Error clearing players:', playersError);
-        throw new Error(`Failed to clear player entries: ${playersError.message}`);
+        throw new Error(`Failed to clear database: ${playersError.message}`);
       }
-      console.log('All player entries cleared successfully');
 
       toast({
         title: "Database Cleared Successfully",
-        description: "All player registrations and event data have been permanently deleted from the database.",
+        description: "All players and registrations have been permanently deleted.",
       });
 
       // Refresh all data
@@ -228,12 +183,12 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
       setEventPairs([]);
       setRankings({});
       setSelectedEvent("");
-      console.log('Database clear operation completed successfully');
+      
     } catch (error) {
       console.error('Error clearing database:', error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to clear database completely. Some data may remain.",
+        description: error instanceof Error ? error.message : "Failed to clear database completely.",
         variant: "destructive",
       });
     } finally {
@@ -243,59 +198,46 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
 
   const fetchEventPairs = async () => {
     try {
-      console.log('Fetching event pairs for:', selectedEvent);
+      console.log('Fetching registrations for event:', selectedEvent);
       const { data, error } = await supabase
-        .from('tbl_partners')
+        .from('registrations')
         .select(`
           *,
-          user:tbl_players!tbl_partners_user_id_fkey(name),
-          partner:tbl_players!tbl_partners_partner_id_fkey(name)
+          player:players!registrations_player_id_fkey(name),
+          partner:players!registrations_partner_id_fkey(name)
         `)
         .eq('event_name', selectedEvent)
         .order('ranking', { ascending: true, nullsFirst: false });
 
       if (error) {
-        console.error('Error fetching event pairs:', error);
+        console.error('Error fetching registrations:', error);
         toast({
           title: "Error",
-          description: "Failed to fetch event pairs",
+          description: "Failed to fetch event registrations",
           variant: "destructive",
         });
       } else {
-        // Filter out duplicate teams - only show each team once
-        const uniqueTeams = new Map();
-        const filteredData = data?.filter(pair => {
-          if (!pair.partner_id) return true; // Show incomplete pairs
-          
-          const teamKey = [pair.user_id, pair.partner_id].sort().join('-');
-          if (uniqueTeams.has(teamKey)) {
-            return false; // Skip duplicate team
-          }
-          uniqueTeams.set(teamKey, true);
-          return true;
-        }) || [];
-
-        console.log('Event pairs filtered:', filteredData.length, 'unique teams');
-        setEventPairs(filteredData);
+        console.log('Registrations fetched:', data?.length, 'found');
+        setEventPairs(data || []);
         const initialRankings: { [key: string]: string } = {};
-        filteredData?.forEach(pair => {
-          if (pair.ranking) {
-            initialRankings[pair.id] = pair.ranking.toString();
+        data?.forEach(reg => {
+          if (reg.ranking) {
+            initialRankings[reg.id] = reg.ranking.toString();
           }
         });
         setRankings(initialRankings);
       }
     } catch (error) {
-      console.error('Unexpected error fetching event pairs:', error);
+      console.error('Unexpected error fetching registrations:', error);
       toast({
         title: "Error",
-        description: "Unexpected error occurred while fetching event pairs",
+        description: "Unexpected error occurred while fetching registrations",
         variant: "destructive",
       });
     }
   };
 
-  const handleRankingChange = (pairId: string, ranking: string) => {
+  const handleRankingChange = (registrationId: string, ranking: string) => {
     const numRanking = parseInt(ranking);
     const maxRanking = eventPairs.length;
     
@@ -311,7 +253,7 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
     if (numRanking > maxRanking) {
       toast({
         title: "Invalid Ranking",
-        description: `Ranking cannot exceed ${maxRanking} (total pairs in event)`,
+        description: `Ranking cannot exceed ${maxRanking} (total teams in event)`,
         variant: "destructive",
       });
       return;
@@ -319,21 +261,21 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
 
     setRankings(prev => ({
       ...prev,
-      [pairId]: ranking
+      [registrationId]: ranking
     }));
   };
 
   const handleSubmitRankings = async () => {
     try {
       console.log('Submitting rankings:', rankings);
-      const updates = Object.entries(rankings).map(([pairId, ranking]) => ({
-        id: pairId,
+      const updates = Object.entries(rankings).map(([registrationId, ranking]) => ({
+        id: registrationId,
         ranking: ranking ? parseInt(ranking) : null
       }));
 
       for (const update of updates) {
         const { error } = await supabase
-          .from('tbl_partners')
+          .from('registrations')
           .update({ ranking: update.ranking })
           .eq('id', update.id);
 
@@ -385,7 +327,6 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
       </div>
 
       <div className="container mx-auto px-4 py-8">
-        {/* Tab Navigation */}
         <div className="flex gap-4 mb-8">
           <Button
             onClick={() => setActiveTab('rankings')}
@@ -419,8 +360,8 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
                   </SelectTrigger>
                   <SelectContent>
                     {events.map((event) => (
-                      <SelectItem key={event.id} value={event.event_name}>
-                        {event.event_name}
+                      <SelectItem key={event.id} value={event.name}>
+                        {event.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -442,19 +383,19 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {eventPairs.map((pair, index) => (
-                            <TableRow key={pair.id}>
+                          {eventPairs.map((registration, index) => (
+                            <TableRow key={registration.id}>
                               <TableCell>{index + 1}</TableCell>
                               <TableCell className="font-medium">
-                                {pair.user?.name} & {pair.partner?.name || "Partner not registered yet"}
+                                {registration.player?.name} & {registration.partner?.name || "Partner not registered yet"}
                               </TableCell>
                               <TableCell>
                                 <Input
                                   type="number"
                                   min="1"
                                   max={eventPairs.length}
-                                  value={rankings[pair.id] || ""}
-                                  onChange={(e) => handleRankingChange(pair.id, e.target.value)}
+                                  value={rankings[registration.id] || ""}
+                                  onChange={(e) => handleRankingChange(registration.id, e.target.value)}
                                   placeholder="Enter ranking"
                                   className="w-24"
                                 />
@@ -489,7 +430,6 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
-              {/* Search and Actions */}
               <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
                 <div className="relative flex-1 max-w-md">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -511,7 +451,6 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
                 </Button>
               </div>
 
-              {/* Players Table */}
               <div className="rounded-lg overflow-hidden border">
                 <Table>
                   <TableHeader>
@@ -559,7 +498,7 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
                 <p><strong>Total Players:</strong> {allPlayers.length}</p>
                 <p><strong>Filtered Results:</strong> {filteredPlayers.length}</p>
                 <p className="text-red-600 font-medium mt-2">
-                  ⚠️ Players are now restricted to a maximum of 2 event registrations
+                  ⚠️ Players are restricted to a maximum of 2 event registrations
                 </p>
               </div>
             </CardContent>
