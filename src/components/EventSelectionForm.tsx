@@ -7,15 +7,25 @@ import { useEventData } from "@/hooks/useEventData";
 import { usePartnerData } from "@/hooks/usePartnerData";
 import { EventSelector } from "./EventSelector";
 import { PartnerSelector } from "./PartnerSelector";
+import { supabase } from "@/integrations/supabase/client";
 
 interface EventSelectionFormProps {
   onSubmit: (data: EventData) => void;
   onBack: () => void;
   isSubmitting: boolean;
   initialData?: EventData;
+  isUpdate?: boolean;
+  userId?: string;
 }
 
-export const EventSelectionForm = ({ onSubmit, onBack, isSubmitting, initialData }: EventSelectionFormProps) => {
+export const EventSelectionForm = ({ 
+  onSubmit, 
+  onBack, 
+  isSubmitting, 
+  initialData,
+  isUpdate = false,
+  userId 
+}: EventSelectionFormProps) => {
   const [eventData, setEventData] = useState<EventData>({
     event1: "",
     partner1: "",
@@ -35,7 +45,21 @@ export const EventSelectionForm = ({ onSubmit, onBack, isSubmitting, initialData
     }
   }, [initialData]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const checkExistingRegistrations = async (playerId: string) => {
+    const { data, error } = await supabase
+      .from('tbl_partners')
+      .select('*')
+      .eq('user_id', playerId);
+
+    if (error) {
+      console.error('Error checking existing registrations:', error);
+      return 0;
+    }
+
+    return data?.length || 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!eventData.event1 && !eventData.event2) {
@@ -54,6 +78,22 @@ export const EventSelectionForm = ({ onSubmit, onBack, isSubmitting, initialData
         variant: "destructive",
       });
       return;
+    }
+
+    // For updates, check registration limit
+    if (isUpdate && userId) {
+      const eventsToRegister = [];
+      if (eventData.event1) eventsToRegister.push('event1');
+      if (eventData.event2) eventsToRegister.push('event2');
+
+      if (eventsToRegister.length > 2) {
+        toast({
+          title: "Registration Restricted",
+          description: "You have already registered for two events. Multiple registrations beyond two are not allowed.",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     onSubmit(eventData);
@@ -123,7 +163,7 @@ export const EventSelectionForm = ({ onSubmit, onBack, isSubmitting, initialData
           className="flex-1 bg-green-600 hover:bg-green-700"
           disabled={isSubmitting}
         >
-          {isSubmitting ? "Submitting..." : "Update Registration"}
+          {isSubmitting ? "Submitting..." : isUpdate ? "Update Registration" : "Register"}
         </Button>
       </div>
     </form>

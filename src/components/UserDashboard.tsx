@@ -89,6 +89,20 @@ export const UserDashboard = ({ user, onBack, onLogout }: UserDashboardProps) =>
     try {
       console.log('Updating events with data:', eventData);
       
+      // Count how many events are being registered
+      const eventsToRegister = [];
+      if (eventData.event1) eventsToRegister.push('event1');
+      if (eventData.event2) eventsToRegister.push('event2');
+
+      if (eventsToRegister.length > 2) {
+        toast({
+          title: "Registration Restricted",
+          description: "You have already registered for two events. Multiple registrations beyond two are not allowed.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       // Delete existing entries for this user
       const { error: deleteError } = await supabase
         .from('tbl_partners')
@@ -218,6 +232,8 @@ export const UserDashboard = ({ user, onBack, onLogout }: UserDashboardProps) =>
                 onBack={() => setEditMode(null)}
                 isSubmitting={false}
                 initialData={getInitialEventData()}
+                isUpdate={true}
+                userId={user.id}
               />
             </CardContent>
           </Card>
@@ -338,9 +354,15 @@ export const UserDashboard = ({ user, onBack, onLogout }: UserDashboardProps) =>
               <Button 
                 onClick={() => setEditMode('events')}
                 className="w-full mt-6 bg-gradient-to-r from-cyan-500 to-sky-500 hover:from-cyan-600 hover:to-sky-600"
+                disabled={userEvents.length >= 2}
               >
-                {userEvents.length > 0 ? 'Edit Event Selections' : 'Register for Events'}
+                {userEvents.length >= 2 ? 'Maximum Events Reached' : userEvents.length > 0 ? 'Edit Event Selections' : 'Register for Events'}
               </Button>
+              {userEvents.length >= 2 && (
+                <p className="text-sm text-gray-500 text-center mt-2">
+                  You have reached the maximum limit of 2 event registrations.
+                </p>
+              )}
             </CardContent>
           </Card>
         </div>

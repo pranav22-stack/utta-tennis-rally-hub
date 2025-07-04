@@ -52,19 +52,88 @@ export const RegistrationForm = ({ onBack }: RegistrationFormProps) => {
     setStep(2);
   };
 
+  const checkExistingRegistrations = async (playerId: string) => {
+    const { data, error } = await supabase
+      .from('tbl_partners')
+      .select('*')
+      .eq('user_id', playerId);
+
+    if (error) {
+      console.error('Error checking existing registrations:', error);
+      return 0;
+    }
+
+    return data?.length || 0;
+  };
+
   const handleEventSubmit = async (eventData: EventData) => {
     setIsSubmitting(true);
     try {
-      // Insert player data
-      const { data: player, error: playerError } = await supabase
+      // Check if player already exists
+      const { data: existingPlayer, error: playerCheckError } = await supabase
         .from('tbl_players')
-        .insert([playerData])
-        .select()
-        .single();
+        .select('id')
+        .eq('whatsapp_number', playerData.whatsapp_number)
+        .maybeSingle();
 
-      if (playerError) throw playerError;
+      if (playerCheckError) {
+        console.error('Error checking existing player:', playerCheckError);
+        throw playerCheckError;
+      }
 
-      console.log('Player created:', player);
+      let playerId: string;
+
+      if (existingPlayer) {
+        // Player already exists, check their current registrations
+        const existingRegistrations = await checkExistingRegistrations(existingPlayer.id);
+        
+        if (existingRegistrations >= 2) {
+          toast({
+            title: "Registration Restricted",
+            description: "You have already registered for two events. Multiple registrations beyond two are not allowed.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        playerId = existingPlayer.id;
+        
+        // Update existing player data
+        const { error: updateError } = await supabase
+          .from('tbl_players')
+          .update(playerData)
+          .eq('id', playerId);
+
+        if (updateError) throw updateError;
+      } else {
+        // Insert new player data
+        const { data: player, error: playerError } = await supabase
+          .from('tbl_players')
+          .insert([playerData])
+          .select()
+          .single();
+
+        if (playerError) throw playerError;
+        playerId = player.id;
+      }
+
+      console.log('Player processed:', playerId);
+
+      // Count how many events are being registered
+      const eventsToRegister = [];
+      if (eventData.event1) eventsToRegister.push('event1');
+      if (eventData.event2) eventsToRegister.push('event2');
+
+      // Check if adding these events would exceed the limit
+      const currentRegistrations = await checkExistingRegistrations(playerId);
+      if (currentRegistrations + eventsToRegister.length > 2) {
+        toast({
+          title: "Registration Restricted",
+          description: "You have already registered for two events. Multiple registrations beyond two are not allowed.",
+          variant: "destructive",
+        });
+        return;
+      }
 
       // Insert partner entries
       const partnerEntries = [];
@@ -72,7 +141,7 @@ export const RegistrationForm = ({ onBack }: RegistrationFormProps) => {
       if (eventData.event1) {
         partnerEntries.push({
           event_name: eventData.event1,
-          user_id: player.id,
+          user_id: playerId,
           partner_id: eventData.partner1 === "Partner not registered yet" ? null : eventData.partner1,
         });
       }
@@ -80,7 +149,7 @@ export const RegistrationForm = ({ onBack }: RegistrationFormProps) => {
       if (eventData.event2) {
         partnerEntries.push({
           event_name: eventData.event2,
-          user_id: player.id,
+          user_id: playerId,
           partner_id: eventData.partner2 === "Partner not registered yet" ? null : eventData.partner2,
         });
       }
@@ -97,7 +166,7 @@ export const RegistrationForm = ({ onBack }: RegistrationFormProps) => {
       if (eventData.partner1 && eventData.partner1 !== "Partner not registered yet") {
         await supabase
           .from('tbl_partners')
-          .update({ partner_id: player.id })
+          .update({ partner_id: playerId })
           .eq('user_id', eventData.partner1)
           .eq('event_name', eventData.event1)
           .is('partner_id', null);
@@ -106,7 +175,7 @@ export const RegistrationForm = ({ onBack }: RegistrationFormProps) => {
       if (eventData.partner2 && eventData.partner2 !== "Partner not registered yet") {
         await supabase
           .from('tbl_partners')
-          .update({ partner_id: player.id })
+          .update({ partner_id: playerId })
           .eq('user_id', eventData.partner2)
           .eq('event_name', eventData.event2)
           .is('partner_id', null);

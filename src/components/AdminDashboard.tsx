@@ -22,6 +22,7 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState<'rankings' | 'players'>('rankings');
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [isClearingDatabase, setIsClearingDatabase] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -94,7 +95,7 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
   };
 
   const handleDeletePlayer = async (playerId: string, playerName: string) => {
-    if (!confirm("Are you sure you want to delete this name from the database?")) {
+    if (!confirm(`Are you sure you want to delete ${playerName} from the database? This will also remove all their event registrations.`)) {
       return;
     }
 
@@ -103,7 +104,7 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
     try {
       console.log('Starting delete process for player:', playerId, playerName);
       
-      // First, delete all partner entries for this player using a more robust query
+      // First, delete all partner entries for this player
       console.log('Deleting partner entries...');
       
       // Delete entries where user is the main user
@@ -143,7 +144,7 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
 
       toast({
         title: "Success",
-        description: "Success",
+        description: `${playerName} has been successfully deleted from the database.`,
       });
 
       // Refresh the data immediately
@@ -169,58 +170,74 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
   };
 
   const handleClearDatabase = async () => {
-    if (!confirm("Are you sure you want to clear the entire database? This will delete all players and registrations. This action cannot be undone.")) {
+    if (!confirm("⚠️ WARNING: This will permanently delete ALL player registrations and event data from the database. This action cannot be undone. Are you absolutely sure?")) {
       return;
     }
 
-    if (!confirm("This will permanently delete ALL data. Are you absolutely sure?")) {
+    if (!confirm("This will clear the entire database including all players like Palak Goyal and their multiple registrations. Type 'CLEAR' if you want to proceed.")) {
       return;
     }
+
+    const userConfirmation = prompt("Type 'CLEAR DATABASE' to confirm this permanent action:");
+    if (userConfirmation !== 'CLEAR DATABASE') {
+      toast({
+        title: "Action Cancelled",
+        description: "Database clear operation was cancelled.",
+      });
+      return;
+    }
+
+    setIsClearingDatabase(true);
 
     try {
-      console.log('Starting database clear process');
+      console.log('Starting comprehensive database clear process');
       
-      // Delete all partners first (to avoid foreign key constraints)
+      // Step 1: Delete all partner entries first (to avoid foreign key constraints)
       console.log('Clearing all partner entries...');
       const { error: partnersError } = await supabase
         .from('tbl_partners')
         .delete()
-        .gte('id', '00000000-0000-0000-0000-000000000000'); // This will match all UUIDs
+        .gte('created_at', '1900-01-01'); // This will match all records
 
       if (partnersError) {
         console.error('Error clearing partners:', partnersError);
+        throw new Error(`Failed to clear partner entries: ${partnersError.message}`);
       }
-      console.log('All partner entries cleared');
+      console.log('All partner entries cleared successfully');
 
-      // Then delete all players
+      // Step 2: Delete all players
       console.log('Clearing all player entries...');
       const { error: playersError } = await supabase
         .from('tbl_players')
         .delete()
-        .gte('id', '00000000-0000-0000-0000-000000000000'); // This will match all UUIDs
+        .gte('created_at', '1900-01-01'); // This will match all records
 
       if (playersError) {
         console.error('Error clearing players:', playersError);
+        throw new Error(`Failed to clear player entries: ${playersError.message}`);
       }
-      console.log('All player entries cleared');
+      console.log('All player entries cleared successfully');
 
       toast({
-        title: "Success",
-        description: "Database cleared successfully",
+        title: "Database Cleared Successfully",
+        description: "All player registrations and event data have been permanently deleted from the database.",
       });
 
       // Refresh all data
       await fetchAllPlayers();
       setEventPairs([]);
       setRankings({});
+      setSelectedEvent("");
       console.log('Database clear operation completed successfully');
     } catch (error) {
       console.error('Error clearing database:', error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to clear database. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to clear database completely. Some data may remain.",
         variant: "destructive",
       });
+    } finally {
+      setIsClearingDatabase(false);
     }
   };
 
@@ -487,9 +504,10 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
                   onClick={handleClearDatabase}
                   variant="destructive"
                   className="bg-red-600 hover:bg-red-700"
+                  disabled={isClearingDatabase}
                 >
                   <Database className="h-4 w-4 mr-2" />
-                  Clear Database
+                  {isClearingDatabase ? "Clearing..." : "Clear Database"}
                 </Button>
               </div>
 
@@ -540,6 +558,9 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
               <div className="text-sm text-gray-600 bg-gray-50 p-4 rounded-lg">
                 <p><strong>Total Players:</strong> {allPlayers.length}</p>
                 <p><strong>Filtered Results:</strong> {filteredPlayers.length}</p>
+                <p className="text-red-600 font-medium mt-2">
+                  ⚠️ Players are now restricted to a maximum of 2 event registrations
+                </p>
               </div>
             </CardContent>
           </Card>
