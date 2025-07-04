@@ -142,21 +142,21 @@ export const AdminDashboard = ({ onBack, onLogout }: AdminDashboardProps) => {
       }
       console.log('Player deleted successfully from database');
 
+      // Immediately update the UI by removing the player from the state
+      setAllPlayers(prev => prev.filter(player => player.id !== playerId));
+
       toast({
         title: "Success",
         description: `${playerName} has been successfully deleted from the database.`,
       });
 
-      // Refresh the data immediately
-      console.log('Refreshing player list...');
-      await fetchAllPlayers();
-      
+      // Also refresh event pairs if needed
       if (selectedEvent) {
         console.log('Refreshing event pairs...');
         await fetchEventPairs();
       }
       
-      console.log('Data refresh completed');
+      console.log('Delete operation completed successfully');
     } catch (error) {
       console.error('Error in delete operation:', error);
       toast({
