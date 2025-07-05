@@ -106,7 +106,7 @@ export const PersonalDetailsForm = ({ initialData, onSubmit }: PersonalDetailsFo
 
       <div>
         <Label htmlFor="food_pref">Food Preference *</Label>
-        <Select value={formData.food_pref} onValueChange={(value) => updateField('food_pref', value)}>
+        <Select value={formData.food_preference} onValueChange={(value) => updateField('food_preference', value)}>
           <SelectTrigger>
             <SelectValue placeholder="Select preference" />
           </SelectTrigger>
@@ -122,8 +122,8 @@ export const PersonalDetailsForm = ({ initialData, onSubmit }: PersonalDetailsFo
       <div className="flex items-center space-x-2">
         <Checkbox
           id="stay"
-          checked={formData.stay_y_or_n}
-          onCheckedChange={(checked) => updateField('stay_y_or_n', checked as boolean)}
+          checked={formData.accommodation_needed}
+          onCheckedChange={(checked) => updateField('accommodation_needed', checked as boolean)}
         />
         <Label htmlFor="stay">I need accommodation</Label>
       </div>

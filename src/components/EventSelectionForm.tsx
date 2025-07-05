@@ -47,9 +47,9 @@ export const EventSelectionForm = ({
 
   const checkExistingRegistrations = async (playerId: string) => {
     const { data, error } = await supabase
-      .from('tbl_partners')
+      .from('registrations')
       .select('*')
-      .eq('user_id', playerId);
+      .eq('player_id', playerId);
 
     if (error) {
       console.error('Error checking existing registrations:', error);

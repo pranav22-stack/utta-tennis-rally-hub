@@ -28,7 +28,7 @@ export const PartnerSelector = ({
           <SelectItem value="Partner not registered yet">Partner not registered yet</SelectItem>
           {partners.map((partner) => (
             <SelectItem key={partner.user_id} value={partner.user_id}>
-              {partner.tbl_players.name}
+              {partner.players?.name || 'Unknown Player'}
             </SelectItem>
           ))}
         </SelectContent>

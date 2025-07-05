@@ -26,7 +26,7 @@ export const UserLogin = ({ onBack }: UserLoginProps) => {
 
     try {
       const { data, error } = await supabase
-        .from('tbl_players')
+        .from('players')
         .select('*')
         .eq('whatsapp_number', whatsappNumber)
         .eq('date_of_birth', dateOfBirth)

@@ -57,7 +57,7 @@ export const usePartnerData = (eventName: string) => {
         .filter(entry => !playersWithPartners.has(entry.player_id))
         .map(entry => ({
           user_id: entry.player_id,
-          tbl_players: entry.players
+          players: entry.players
         }));
 
       console.log('Available partners for', eventName, ':', availablePlayers);
